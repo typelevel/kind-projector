@@ -8,8 +8,8 @@ into type projections like:
   ({type L_kp[X_kp0] = Either[X_kp0, Double]})#L_kp
   ({type L_kp[X_kp1, X_kp2] = Tuple3[Int, X_kp1, X_kp2]})#L_kp
 
-For various reasons I've been using make to develop the plugin. Here are some
-various make targets:
+For various reasons [1] I've been using make to develop the plugin. Here are
+some various make targets:
 
   make plugin        compile and assemble the plugin jar
   make test          (try to) compile the test code
@@ -17,3 +17,10 @@ various make targets:
   make clean         delete jar, class files, etc
 
 There are more targets--the Makefile should be fairly readable.
+
+This is only working in the most fragile sense. If you try "fancy" things
+like Either[Int, ?][Double], you will probably not like the result.
+
+[1] I find make really easy to reason about in these simple cases. Changing how
+scalac is invoked, and adding new targets to do various things, is all very
+explicit and hard to mess up. 
