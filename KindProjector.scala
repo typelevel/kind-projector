@@ -39,19 +39,19 @@ with Transform with TypingTransformers with TreeDSL {
         newTypeName(name),
         List[TypeDef](),
         TypeBoundsTree(
-          Select(Select(Ident("_root_"), "scala"), "Nothing"),
-          Select(Select(Ident("_root_"), "scala"), "Any")
+          Select(Select(Ident("_root_"), "scala"), newTypeName("Nothing")),
+          Select(Select(Ident("_root_"), "scala"), newTypeName("Any"))
         )
       )
 
       tree match {
         case AppliedTypeTree(t, args) => {
           val args2 = args.zipWithIndex.map {
-            case (Ident(`qmark`), i) => Ident("X$kp%d" format i)
+            case (Ident(`qmark`), i) => Ident(newTypeName("X_kp%d" format i))
             case (arg, i) => super.transform(arg)
           }
 
-          val innerNames = args2.map(_.toString).filter(_ startsWith "X$kp")
+          val innerNames = args2.map(_.toString).filter(_ startsWith "X_kp")
 
           //println("t is %s" format t)
           //println("args are %s" format args)
@@ -61,19 +61,19 @@ with Transform with TypingTransformers with TreeDSL {
           SelectFromTypeTree(
             CompoundTypeTree(
               Template(
-                List(Select(Select(Ident("_root_"), "scala"), "AnyRef")),
+                List(Select(Select(Ident("_root_"), "scala"), newTypeName("AnyRef"))),
                 ValDef(Modifiers(0), "_", TypeTree(), EmptyTree),
                 List(
                   TypeDef(
                     Modifiers(0),
-                    newTypeName("L$kp"),
+                    newTypeName("L_kp"),
                     innerNames.map(s => createInnerTypeParam(s)),
                     AppliedTypeTree(t, args2)
                   )
                 )
               )
             ),
-            newTypeName("L$kp")
+            newTypeName("L_kp")
           )
         }
 

@@ -1,0 +1,19 @@
+The goal of this plugin is to rewrite things like:
+
+  Either[?, Double]
+  Tuple3[Int, ?, ?]
+
+into type projections like:
+
+  ({type L_kp[X_kp0] = Either[X_kp0, Double]})#L_kp
+  ({type L_kp[X_kp1, X_kp2] = Tuple3[Int, X_kp1, X_kp2]})#L_kp
+
+For various reasons I've been using make to develop the plugin. Here are some
+various make targets:
+
+  make plugin        compile and assemble the plugin jar
+  make test          (try to) compile the test code
+  make tree          print the tree of the test code
+  make clean         delete jar, class files, etc
+
+There are more targets--the Makefile should be fairly readable.
