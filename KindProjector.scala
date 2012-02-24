@@ -29,7 +29,8 @@ with Transform with TypingTransformers with TreeDSL {
 
   class MyTransformer(unit:CompilationUnit) extends TypingTransformer(unit) {
 
-    val qmark = newTypeName("$qmark")
+    val tlambda = newTypeName("Lambda")
+    val placeholder = newTypeName("$qmark")
 
     override def transform(tree: Tree): Tree = {
       def mylog(s:String) = unit.warning(tree.pos, s)
@@ -45,18 +46,38 @@ with Transform with TypingTransformers with TreeDSL {
       )
 
       tree match {
+/*
+         AppliedTypeTree( // sym=<none>, tpe=null
+            Ident("Fake"), // sym=<none>, sym.tpe=<notype>, tpe=null,
+            List( // 3 arguments(s)
+              Ident("A"), // sym=<none>, sym.tpe=<notype>, tpe=null,
+              Ident("B"), // sym=<none>, sym.tpe=<notype>, tpe=null,
+              AppliedTypeTree( // sym=<none>, tpe=null
+                Ident("Either"), // sym=<none>, sym.tpe=<notype>, tpe=null,
+                List( // 2 arguments(s)
+                  Ident("B"), // sym=<none>, sym.tpe=<notype>, tpe=null,
+                  Ident("A") // sym=<none>, sym.tpe=<notype>, tpe=null
+                ) 
+              ) 
+            ) 
+          )
+*/
+        case AppliedTypeTree(Ident(`tlambda`), args) => {
+          val (args2, subtree) = args.reverse match {
+            case Nil => sys.error("die")
+            case a :: as => (as.reverse, a)
+          }
+
+          tree
+        }
+
         case AppliedTypeTree(t, args) => {
           val args2 = args.zipWithIndex.map {
-            case (Ident(`qmark`), i) => Ident(newTypeName("X_kp%d" format i))
+            case (Ident(`placeholder`), i) => Ident(newTypeName("X_kp%d" format i))
             case (arg, i) => super.transform(arg)
           }
 
           val innerNames = args2.map(_.toString).filter(_ startsWith "X_kp")
-
-          //println("t is %s" format t)
-          //println("args are %s" format args)
-          //println("args2 are %s" format args2)
-          //println("inner types are %s" format innerNames)
 
           if (innerNames.isEmpty) {
             tree

@@ -20,4 +20,9 @@ object Test {
   // should not be changed by the plugin
   foo[Either[Int, Double]]
   foo[Tuple3[Int, Int, Double]]
+
+  // xyz
+  type Fake[A, B, C] = (A, B, C)
+  //foo[Fake[A, B, Either[B, A]]]
+  //baz[Lambda[A, B, Either[B, A]]
 }
