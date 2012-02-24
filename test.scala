@@ -16,4 +16,8 @@ object Test {
   // used to test the plugin
   bar[Either[Int, ?]]
   baz[Tuple3[Int, ?, ?]]
+
+  // should not be changed by the plugin
+  foo[Either[Int, Double]]
+  foo[Tuple3[Int, Int, Double]]
 }

@@ -58,23 +58,27 @@ with Transform with TypingTransformers with TreeDSL {
           //println("args2 are %s" format args2)
           //println("inner types are %s" format innerNames)
 
-          SelectFromTypeTree(
-            CompoundTypeTree(
-              Template(
-                List(Select(Select(Ident("_root_"), "scala"), newTypeName("AnyRef"))),
-                ValDef(Modifiers(0), "_", TypeTree(), EmptyTree),
-                List(
-                  TypeDef(
-                    Modifiers(0),
-                    newTypeName("L_kp"),
-                    innerNames.map(s => createInnerTypeParam(s)),
-                    AppliedTypeTree(t, args2)
+          if (innerNames.isEmpty) {
+            tree
+          } else {
+            SelectFromTypeTree(
+              CompoundTypeTree(
+                Template(
+                  List(Select(Select(Ident("_root_"), "scala"), newTypeName("AnyRef"))),
+                  ValDef(Modifiers(0), "_", TypeTree(), EmptyTree),
+                  List(
+                    TypeDef(
+                      Modifiers(0),
+                      newTypeName("L_kp"),
+                      innerNames.map(s => createInnerTypeParam(s)),
+                      AppliedTypeTree(t, args2)
+                    )
                   )
                 )
-              )
-            ),
-            newTypeName("L_kp")
-          )
+              ),
+              newTypeName("L_kp")
+            )
+          }
         }
 
         case _ => super.transform(tree)
