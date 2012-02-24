@@ -1,0 +1,4 @@
+<plugin>
+  <name>kind-projector</name>
+  <classname>d_m.KindProjector</classname>
+</plugin>
