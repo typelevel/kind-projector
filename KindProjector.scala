@@ -35,7 +35,7 @@ with Transform with TypingTransformers with TreeDSL {
       def mylog(s:String) = unit.warning(tree.pos, s)
 
       def createInnerTypeParam(name:String) = TypeDef(
-        Modifiers(0),
+        Modifiers(PARAM),
         newTypeName(name),
         List[TypeDef](),
         TypeBoundsTree(
