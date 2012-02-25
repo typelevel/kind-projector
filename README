@@ -44,7 +44,7 @@ instead of Lambda[A, B, Either[B, A]]. Unfortunately this would actually
 require modifying the parser (i.e. the language itself) which is outside the
 scope of this project.
 
-I have considered using Function2 to enhance the syntax of Lambda, e.g.
+I have considered using Function1 to enhance the syntax of Lambda, e.g.
 Lambda[A, B] => Tuple3[B, A, A] instead of Lambda[A, B, Tuple3[B, A, A]]. I'm
 not sure whether that is better or worse.
  
