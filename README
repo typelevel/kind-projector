@@ -1,4 +1,11 @@
-The goal of this plugin is to rewrite things like:
+The goal of this plugin is to rewrite valid syntax into different syntax,
+allowing us "add" a syntax for type lambdas. This is nice because it's easy to
+model this as an (un-typed) tree transformation. It's bad because it will
+change the meaning of a (potentially) valid program. However, as long as you
+don't use "?" or "Lambda" as type names you will be fine. 
+
+Two syntaxes are supported. The first resembles the "_ + _" syntax for
+anonymous functions and turns things like: 
 
   Either[?, Double]
   Tuple3[Int, ?, ?]
@@ -8,7 +15,18 @@ into type projections like:
   ({type L_kp[X_kp0] = Either[X_kp0, Double]})#L_kp
   ({type L_kp[X_kp1, X_kp2] = Tuple3[Int, X_kp1, X_kp2]})#L_kp
 
-For various reasons [1] I've been using make to develop the plugin. Here are
+The second resembles the "(x, y) => x + y" syntax for anonymous functions and
+turns things like: 
+
+  Lambda[A, (A, A)]
+  Lambda[A, B, Either[A, Option[B]]]
+
+into type projections like:
+
+  ({type L_kp[A] = (A, A)})#L_kp
+  ({type L_kp[A, B] = Either[A, Option[B]]})#L_kp
+
+For various reasons I've been using make to develop the plugin. Here are
 some various make targets:
 
   make plugin        compile and assemble the plugin jar
@@ -21,6 +39,12 @@ There are more targets--the Makefile should be fairly readable.
 This is only working in the most fragile sense. If you try "fancy" things
 like Either[Int, ?][Double], you will probably not like the result.
 
-[1] I find make really easy to reason about in these simple cases. Changing how
-scalac is invoked, and adding new targets to do various things, is all very
-explicit and hard to mess up. 
+Also, there have been suggestions for better syntax, like [A,B]Either[B,A]
+instead of Lambda[A, B, Either[B, A]]. Unfortunately this would actually
+require modifying the parser (i.e. the language itself) which is outside the
+scope of this project.
+
+I have considered using Function2 to enhance the syntax of Lambda, e.g.
+Lambda[A, B] => Tuple3[B, A, A] instead of Lambda[A, B, Tuple3[B, A, A]]. I'm
+not sure whether that is better or worse.
+ 

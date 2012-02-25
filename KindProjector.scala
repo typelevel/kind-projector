@@ -46,29 +46,34 @@ with Transform with TypingTransformers with TreeDSL {
       )
 
       tree match {
-/*
-         AppliedTypeTree( // sym=<none>, tpe=null
-            Ident("Fake"), // sym=<none>, sym.tpe=<notype>, tpe=null,
-            List( // 3 arguments(s)
-              Ident("A"), // sym=<none>, sym.tpe=<notype>, tpe=null,
-              Ident("B"), // sym=<none>, sym.tpe=<notype>, tpe=null,
-              AppliedTypeTree( // sym=<none>, tpe=null
-                Ident("Either"), // sym=<none>, sym.tpe=<notype>, tpe=null,
-                List( // 2 arguments(s)
-                  Ident("B"), // sym=<none>, sym.tpe=<notype>, tpe=null,
-                  Ident("A") // sym=<none>, sym.tpe=<notype>, tpe=null
-                ) 
-              ) 
-            ) 
-          )
-*/
         case AppliedTypeTree(Ident(`tlambda`), args) => {
           val (args2, subtree) = args.reverse match {
             case Nil => sys.error("die")
             case a :: as => (as.reverse, a)
           }
 
-          tree
+          val innerNames = args2.map {
+            case Ident(name) => name.toString
+            case x => sys.error("got x=%s" format x)
+          }
+
+          SelectFromTypeTree(
+            CompoundTypeTree(
+              Template(
+                List(Select(Select(Ident("_root_"), "scala"), newTypeName("AnyRef"))),
+                ValDef(Modifiers(0), "_", TypeTree(), EmptyTree),
+                List(
+                  TypeDef(
+                    Modifiers(0),
+                    newTypeName("L_kp"),
+                    innerNames.map(s => createInnerTypeParam(s)),
+                    subtree
+                  )
+                )
+              )
+            ),
+            newTypeName("L_kp")
+          )
         }
 
         case AppliedTypeTree(t, args) => {
