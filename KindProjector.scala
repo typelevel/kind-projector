@@ -67,7 +67,7 @@ with Transform with TypingTransformers with TreeDSL {
                     Modifiers(0),
                     newTypeName("L_kp"),
                     innerNames.map(s => createInnerTypeParam(s)),
-                    subtree
+                    super.transform(subtree)
                   )
                 )
               )
@@ -85,7 +85,7 @@ with Transform with TypingTransformers with TreeDSL {
           val innerNames = args2.map(_.toString).filter(_ startsWith "X_kp")
 
           if (innerNames.isEmpty) {
-            tree
+            super.transform(tree)
           } else {
             SelectFromTypeTree(
               CompoundTypeTree(
