@@ -38,9 +38,10 @@ valid programs. In practice this means that you must avoid defining the
 following identifiers:
 
  1. Lambda
- 2. ?
- 3. L_kp
- 4. X_kp0, X_kp1, ...
+ 2. λ
+ 3. ?
+ 4. L_kp
+ 5. X_kp0, X_kp1, ...
 
 If you find yourself using lots of type lambdas, and you don't mind reserving
 those identifiers, then this compiler plugin is for you!

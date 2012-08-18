@@ -25,4 +25,10 @@ object Test {
   type Fake[A] = A
   foo[Fake[(Int, Double) => Either[Double, Int]]]
   baz[Lambda[(A, B) => Either[B, A]]]
+
+  type XYZ[F, G[_], H[_, _]] = Unit
+  foo[XYZ[Int, Either[?, Int], Either[?, ?]]]
+
+  bar[XYZ[?, Either[?, Int], Either[?, ?]]]
+  bar[Lambda[A => XYZ[Int, Either[A, ?], Either[?, ?]]]]
 }

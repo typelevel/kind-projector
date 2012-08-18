@@ -28,11 +28,13 @@ with Transform with TypingTransformers with TreeDSL {
   def newTransformer(unit:CompilationUnit) = new MyTransformer(unit)
 
   class MyTransformer(unit:CompilationUnit) extends TypingTransformer(unit) {
-    // we reserve two names: "Lambda" and "?"
-    val tlambda = newTypeName("Lambda")
+    // reserve some names
+    val tlambda1 = newTypeName("Lambda")
+    val tlambda2 = newTypeName("λ")
     val placeholder = newTypeName("$qmark")
 
     override def transform(tree: Tree): Tree = {
+
       /**
        * We use this to create type parameters inside our type project, e.g.
        * the A in: ({type L[A] = (A, Int) => A})#L.
@@ -83,49 +85,56 @@ with Transform with TypingTransformers with TreeDSL {
         )
       }
 
+      /**
+       * This method handles the explicit type lambda case, e.g.
+       * Lambda[(A, B) => Function2[A, Int, B]] case.
+       */
+      def handleLambda(a:Tree, as:List[Tree]) = {
+        val (args, subtree) = parseLambda(a, as, Nil)
+        val innerNames = args.map {
+          case Ident(name) => name.toString
+          case x => {
+            unit.error(x.pos, "Identifier expected, found %s" format x); ""
+          }
+        }
+        buildTypeProjection(innerNames, subtree)
+      }
+
+      /**
+       * This method handles the implicit type lambda case, e.g.
+       * Function2[?, Int, ?].
+       */
+      def handlePlaceholders(t:Tree, as:List[Tree]) = {
+        // create a new type argument list, catching placeholders and create
+        // individual identifiers for them.
+        val args = as.zipWithIndex.map {
+          case (Ident(`placeholder`), i) => Ident(newTypeName("X_kp%d" format i))
+          case (a, i) => super.transform(a)
+        }
+
+        // get a list of all names generated for placeholders.
+        val innerNames = args.map(_.toString).filter(_ startsWith "X_kp")
+
+        // if we didn't have any placeholders use the normal transformation.
+        // otherwise build a type projection.
+        if (innerNames.isEmpty) {
+          super.transform(tree)
+        } else {
+          buildTypeProjection(innerNames, AppliedTypeTree(t, args))
+        }
+      }
+
       tree match {
-        // this case deals with situations like Lambda[(A, B) => ...] where
-        // the type lambda's type parameters might be repeated (or used in a
-        // different order from the one they appeared in, or ignored).
-        case AppliedTypeTree(Ident(`tlambda`), AppliedTypeTree(_, a :: as) :: Nil) => {
-          val (args, subtree) = parseLambda(a, as, Nil)
+        // Lambda[A => Either[A, Int]] and λ[A => Either[A, Int]] cases.
+        case AppliedTypeTree(Ident(`tlambda1`), AppliedTypeTree(_, a :: as) :: Nil) =>
+          handleLambda(a, as)
+        case AppliedTypeTree(Ident(`tlambda2`), AppliedTypeTree(_, a :: as) :: Nil) =>
+          handleLambda(a, as)
 
-          val innerNames = args.map {
-            case Ident(name) => name.toString
-            case x => {
-              unit.error(x.pos, "Identifier expected, found %s" format x); ""
-            }
-          }
+        // Either[?, Int] case.
+        case AppliedTypeTree(t, as) => handlePlaceholders(t, as)
 
-          buildTypeProjection(innerNames, subtree)
-        }
-
-        // this case catches situations like Either[Int, ?]. we catch all trees
-        // that could match and see if they contain the placeholder (?). if not
-        // then we just transform the tree normally. otherwise, we give the
-        // placeholders unique names based on their position in the type
-        // argument list, and do our own transformation.
-        case AppliedTypeTree(t, as) => {
-          // create a new type argument list, catching placeholders and create
-          // individual identifiers for them.
-          val args = as.zipWithIndex.map {
-            case (Ident(`placeholder`), i) => Ident(newTypeName("X_kp%d" format i))
-            case (a, i) => super.transform(a)
-          }
-
-          // get a list of all names generated for placeholders.
-          val innerNames = args.map(_.toString).filter(_ startsWith "X_kp")
-
-          // if we didn't have any placeholders use the normal transformation.
-          // otherwise build a type projection.
-          if (innerNames.isEmpty) {
-            super.transform(tree)
-          } else {
-            buildTypeProjection(innerNames, AppliedTypeTree(t, args))
-          }
-        }
-
-        // if neither of our special cases matched this tree, just continue
+        // Otherwise, carry on as normal.
         case _ => super.transform(tree)
       }
     }
