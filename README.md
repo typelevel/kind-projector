@@ -119,6 +119,15 @@ lambda the way we use `3 + _` to define a function. Unfortunately, it's
 probably too late to modify the meaning of _, which is why we chose to use `?`
 instead.
 
+Finally the currently supported type lambdas can't place existentials on their
+arguments. Future work should fix this, allowing constructions like:
+
+```scala
+Lambda[A[_] => List[A[Int]]]
+Lambda[(A, B[_]) => B[A]]
+```
+
+
 ### Disclaimers
 
 This is only working in the most fragile sense. If you try "fancy" things
