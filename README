@@ -1,50 +1,76 @@
+# Kind Projector
+
+## Overview
+
 The goal of this plugin is to rewrite valid syntax into different syntax,
 allowing us "add" a syntax for type lambdas. This is nice because it's easy to
 model this as an (un-typed) tree transformation. It's bad because it will
 change the meaning of a (potentially) valid program. However, as long as you
 don't use "?" or "Lambda" as type names you will be fine. 
 
-Two syntaxes are supported. The first resembles the "_ + _" syntax for
+## Examples
+
+Two syntaxes are supported. The first resembles the `_ + _` syntax for
 anonymous functions and turns things like: 
 
-  Either[?, Double]
-  Tuple3[Int, ?, ?]
+```scala
+Either[?, Double]
+Tuple3[Int, ?, ?]
+```
 
 into type projections like:
 
-  ({type L_kp[X_kp0] = Either[X_kp0, Double]})#L_kp
-  ({type L_kp[X_kp1, X_kp2] = Tuple3[Int, X_kp1, X_kp2]})#L_kp
+```scala
+({type L_kp[X_kp0] = Either[X_kp0, Double]})#L_kp
+({type L_kp[X_kp1, X_kp2] = Tuple3[Int, X_kp1, X_kp2]})#L_kp
+```
 
-The second resembles the "(x, y) => x + y" syntax for anonymous functions and
-turns things like: 
+The second resembles the `(x, y) => x + y` syntax for anonymous functions and
+turns things like:
 
-  Lambda[A, (A, A)]
-  Lambda[A, B, Either[A, Option[B]]]
+```scala
+Lambda[A => (A, A)]
+Lambda[(A, B) => Either[A, Option[B]]]
+```
 
 into type projections like:
 
-  ({type L_kp[A] = (A, A)})#L_kp
-  ({type L_kp[A, B] = Either[A, Option[B]]})#L_kp
+```scala
+({type L_kp[A] = (A, A)})#L_kp
+({type L_kp[A, B] = Either[A, Option[B]]})#L_kp
+```
+
+## Building
 
 For various reasons I've been using make to develop the plugin. Here are
 some various make targets:
 
-  make plugin        compile and assemble the plugin jar
-  make test          (try to) compile the test code
-  make tree          print the tree of the test code
-  make clean         delete jar, class files, etc
+    make plugin        compile and assemble the plugin jar
+    make test          (try to) compile the test code
+    make tree          print the tree of the test code
+    make clean         delete jar, class files, etc
 
 There are more targets--the Makefile should be fairly readable.
 
-This is only working in the most fragile sense. If you try "fancy" things
-like Either[Int, ?][Double], you will probably not like the result.
+## Disclaimers and Errata
 
-Also, there have been suggestions for better syntax, like [A,B]Either[B,A]
-instead of Lambda[A, B, Either[B, A]]. Unfortunately this would actually
+There have been suggestions for better syntax, like `[A,B]Either[B,A]`
+instead of `Lambda[(A, B) => Either[B, A]]`. Unfortunately this would actually
 require modifying the parser (i.e. the language itself) which is outside the
-scope of this project.
+scope of this project (at least, until there is an earlier compiler phase to
+plug into).
 
-I have considered using Function1 to enhance the syntax of Lambda, e.g.
-Lambda[A, B] => Tuple3[B, A, A] instead of Lambda[A, B, Tuple3[B, A, A]]. I'm
-not sure whether that is better or worse.
- 
+This is only working in the most fragile sense. If you try "fancy" things
+like `Either[Int, ?][Double]`, you will probably not like the result. Also,
+please do not use this code in production unless you know what you're doing;
+this project is clearly an abuse of the compiler plugin framework and the
+author disclaims all warranty or liability.
+
+That said, if you end up using this, even in a toy project, please let me know!
+
+## Copyright and License
+
+All code is available to you under the MIT license, available at
+http://opensource.org/licenses/mit-license.php. 
+
+Copyright Erik Osheim, 2011-2012.

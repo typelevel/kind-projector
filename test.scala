@@ -22,7 +22,7 @@ object Test {
   foo[Tuple3[Int, Int, Double]]
 
   // xyz
-  type Fake[A, B, C] = (A, B, C)
-  foo[Fake[Int, Double, Either[Double, Int]]]
-  baz[Lambda[A, B, Either[B, A]]]
+  type Fake[A] = A
+  foo[Fake[(Int, Double) => Either[Double, Int]]]
+  baz[Lambda[(A, B) => Either[B, A]]]
 }
