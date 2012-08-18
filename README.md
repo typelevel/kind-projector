@@ -1,6 +1,6 @@
-# Kind Projector
+## Kind Projector
 
-## Dedication
+### Dedication
 
 > "But I don't want to go among mad people," Alice remarked.
 > 
@@ -13,10 +13,10 @@
 >  
 > --Lewis Carroll, "Alice's Adventures in Wonderland"
 
-## Overview
+### Overview
 
 One piece of Scala syntactic noise that often trips people up is the use of
-type projections to implement anonymous, partiall-applied types. For example:
+type projections to implement anonymous, partially-applied types. For example:
 
 ```scala
 // partially-applied type named "IntOrA"
@@ -30,8 +30,8 @@ Many people have wished for a better way to do this.
 
 The goal of this plugin is to add a syntax for type lambdas. We do this by
 rewriting syntactically valid programs into new programs, letting us seem to
-add new keywords to the language. This is done via an (un-typed) tree
-transformation via a compiler plugin.
+add new keywords to the language. This is achieved through a compiler plugin
+performing an (un-typed) tree transformation.
 
 One problem with this approach is that it changes the meaning of (potentially)
 valid programs. In practice this means that you must avoid defining the
@@ -45,7 +45,7 @@ following identifiers:
 If you find yourself using lots of type lambdas, and you don't mind reserving
 those identifiers, then this compiler plugin is for you!
 
-## Examples
+### Examples
 
 Two syntaxes are supported. The first resembles the `_ + _` syntax for
 anonymous functions and turns things like: 
@@ -77,7 +77,7 @@ into type projections like:
 ({type L_kp[A, B] = Either[A, Option[B]]})#L_kp
 ```
 
-## Building
+### Building
 
 For various reasons I've been using make to develop the plugin. Here are
 some various make targets:
@@ -89,13 +89,20 @@ some various make targets:
 
 There are more targets--the Makefile should be fairly readable.
 
-## Disclaimers and Errata
+### Errata
 
 There have been suggestions for better syntax, like `[A,B]Either[B,A]`
 instead of `Lambda[(A, B) => Either[B, A]]`. Unfortunately this would actually
 require modifying the parser (i.e. the language itself) which is outside the
 scope of this project (at least, until there is an earlier compiler phase to
 plug into).
+
+Others have noted that it would be nicer to be able to use _ for types the way
+we do for values, so that we could use Either[Int, _] to define a type lambda
+the way we use 3 + _ to define a function. Unfortunately, it's probably too
+late to modify the meaning of _, which is why we chose to use ? instead.
+
+### Disclaimers
 
 This is only working in the most fragile sense. If you try "fancy" things
 like `Either[Int, ?][Double]`, you will probably not like the result. Also,
@@ -105,7 +112,7 @@ author disclaims all warranty or liability.
 
 That said, if you end up using this, even in a toy project, please let me know!
 
-## Copyright and License
+### Copyright and License
 
 All code is available to you under the MIT license, available at
 http://opensource.org/licenses/mit-license.php. 
