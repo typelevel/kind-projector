@@ -87,28 +87,37 @@ You can also use unicode if you like that sort of thing:
 
 ### Building
 
-For various reasons I've been using make to develop the plugin. Here are
-some various make targets:
+You can build kind-projector using SBT 0.11.2 or newer.
 
-    make plugin        compile and assemble the plugin jar
-    make test          (try to) compile the test code
-    make tree          print the tree of the test code
-    make clean         delete jar, class files, etc
+Here are some useful targets:
 
-There are more targets--the Makefile should be fairly readable.
+ * compile: compile the code
+ * package: build the plugin jar
+ * test: compile the test files (no tests run; compilation is the test)
+ * console: you can play around with the plugin using the console
+
+You can use the plugin with `scalac` by specifying it on the command-line. For
+instance:
+
+```
+scalac -Xplugin:kind-projector_2.9.2-0.3.jar test.scala
+```
+
+(TODO: better instructions for how to integrate with SBT.)
 
 ### Errata
 
-There have been suggestions for better syntax, like `[A,B]Either[B,A]`
-instead of `Lambda[(A, B) => Either[B, A]]`. Unfortunately this would actually
-require modifying the parser (i.e. the language itself) which is outside the
-scope of this project (at least, until there is an earlier compiler phase to
-plug into).
+There have been suggestions for better syntax, like `[A, B]Either[B, A]` or
+`[A, B] => Either[B, A]` instead of `Lambda[(A, B) => Either[B, A]]`.
+Unfortunately this would actually require modifying the parser (i.e. the
+language itself) which is outside the scope of this project (at least, until
+there is an earlier compiler phase to plug into).
 
-Others have noted that it would be nicer to be able to use _ for types the way
-we do for values, so that we could use Either[Int, _] to define a type lambda
-the way we use 3 + _ to define a function. Unfortunately, it's probably too
-late to modify the meaning of _, which is why we chose to use ? instead.
+Others have noted that it would be nicer to be able to use `_` for types the
+way we do for values, so that we could use `Either[Int, _]` to define a type
+lambda the way we use `3 + _` to define a function. Unfortunately, it's
+probably too late to modify the meaning of _, which is why we chose to use `?`
+instead.
 
 ### Disclaimers
 
