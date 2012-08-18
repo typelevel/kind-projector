@@ -1,12 +1,49 @@
 # Kind Projector
 
+## Dedication
+
+> "But I don't want to go among mad people," Alice remarked.
+> 
+> "Oh, you can't help that," said the Cat: "we're all mad here. I'm mad.
+> You're mad."
+> 
+> "How do you know I'm mad?" said Alice.
+> 
+> "You must be," said the Cat, "or you wouldn't have come here."
+>  
+> --Lewis Carroll, "Alice's Adventures in Wonderland"
+
 ## Overview
 
-The goal of this plugin is to rewrite valid syntax into different syntax,
-allowing us "add" a syntax for type lambdas. This is nice because it's easy to
-model this as an (un-typed) tree transformation. It's bad because it will
-change the meaning of a (potentially) valid program. However, as long as you
-don't use "?" or "Lambda" as type names you will be fine. 
+One piece of Scala syntactic noise that often trips people up is the use of
+type projections to implement anonymous, partiall-applied types. For example:
+
+```scala
+// partially-applied type named "IntOrA"
+type IntOrA[A] = Either[Int, A]
+
+// type projection implementing the same type anonymously (without a name).
+({type L[A] = Either[Int, A]})#L
+```
+
+Many people have wished for a better way to do this.
+
+The goal of this plugin is to add a syntax for type lambdas. We do this by
+rewriting syntactically valid programs into new programs, letting us seem to
+add new keywords to the language. This is done via an (un-typed) tree
+transformation via a compiler plugin.
+
+One problem with this approach is that it changes the meaning of (potentially)
+valid programs. In practice this means that you must avoid defining the
+following identifiers:
+
+ 1. Lambda
+ 2. ?
+ 3. L_kp
+ 4. X_kp0, X_kp1, ...
+
+If you find yourself using lots of type lambdas, and you don't mind reserving
+those identifiers, then this compiler plugin is for you!
 
 ## Examples
 
