@@ -78,6 +78,13 @@ into type projections like:
 ({type L_kp[A, B] = Either[A, Option[B]]})#L_kp
 ```
 
+You can also use unicode if you like that sort of thing:
+
+```scala
+λ[A => (A, A)]
+λ[(A, B) => Either[A, Option[B]]]
+```
+
 ### Building
 
 For various reasons I've been using make to develop the plugin. Here are
