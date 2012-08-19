@@ -36,4 +36,13 @@ object Test {
   def qux[T[_[_]]] = ()
   qux[({type L[A[_]] = Unit})#L]
   qux[Lambda[A[_] => Unit]]
+
+  // higher higher order
+  def vex[T[_[_[_]]]] = ()
+  vex[({type L[A[_[_]]] = Unit})#L]
+  vex[Lambda[A[_[_]] => Unit]]
+
+  def hex[T[_[_[_[_]]]]] = ()
+  hex[({type L[A[_[_[_]]]] = Unit})#L]
+  hex[Lambda[A[_[_[_]]] => Unit]]
 }

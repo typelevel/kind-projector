@@ -61,11 +61,21 @@ with Transform with TypingTransformers with TreeDSL {
        * that are themselves parameterized.
        */
       def makeComplexTypeParam(t:Tree):TypeDef = t match {
+        case Ident(name) => makeTypeParam(name)
+
         case TypeDef(m, nm, ps, bs) => {
           TypeDef(Modifiers(PARAM), nm, ps.map(makeComplexTypeParam), bs)
         }
-        case Ident(name) => makeTypeParam(name)
-        case x => sys.error("no no %s (%s)" format (x, x.getClass.getName))
+
+        case ExistentialTypeTree(AppliedTypeTree(Ident(name), ps), _) => {
+          val tparams = ps.map(makeComplexTypeParam)
+          TypeDef(Modifiers(PARAM), makeTypeName(name), tparams, bounds)
+        }
+
+        case x => {
+          unit.error(x.pos, "Can't parse %s (%s)" format (x, x.getClass.getName))
+          null.asInstanceOf[TypeDef]
+        }
       }
 
       /**
@@ -113,13 +123,18 @@ with Transform with TypingTransformers with TreeDSL {
         val innerTypes = args.map {
           case Ident(name) => makeTypeParam(name)
 
+          case AppliedTypeTree(Ident(name), ps) => {
+            val tparams = ps.map(makeComplexTypeParam)
+            TypeDef(Modifiers(PARAM), makeTypeName(name), tparams, bounds)
+          }
+
           case ExistentialTypeTree(AppliedTypeTree(Ident(name), ps), _) => {
             val tparams = ps.map(makeComplexTypeParam)
             TypeDef(Modifiers(PARAM), makeTypeName(name), tparams, bounds)
           }
 
           case x => {
-            unit.error(x.pos, "Identifier expected, found %s" format x)
+            unit.error(x.pos, "Can't parse %s (%s)" format (x, x.getClass.getName))
             null.asInstanceOf[TypeDef]
           }
         }
