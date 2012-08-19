@@ -119,8 +119,8 @@ lambda the way we use `3 + _` to define a function. Unfortunately, it's
 probably too late to modify the meaning of _, which is why we chose to use `?`
 instead.
 
-Finally the currently supported type lambdas can't place existentials on their
-arguments. Future work should fix this, allowing constructions like:
+Support for existentials has recently been added, although it isn't yet well
+tested. (As if anything in this plugin is!) The syntax is as follows:
 
 ```scala
 Lambda[A[_] => List[A[Int]]]

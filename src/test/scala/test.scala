@@ -26,9 +26,14 @@ object Test {
   foo[Fake[(Int, Double) => Either[Double, Int]]]
   baz[Lambda[(A, B) => Either[B, A]]]
 
-  type XYZ[F, G[_], H[_, _]] = Unit
-  foo[XYZ[Int, Either[?, Int], Either[?, ?]]]
+  class Graph { type Node }
+  foo[Graph { type Node = Int }]
+  bar[Lambda[N => Graph { type Node = N }]]
+  //bar[Graph { type Node = ? }] // TODO, maybe?
+  //bar[Graph#?Node] // TODO, maybe?
 
-  bar[XYZ[?, Either[?, Int], Either[?, ?]]]
-  bar[Lambda[A => XYZ[Int, Either[A, ?], Either[?, ?]]]]
+  // higher order
+  def qux[T[_[_]]] = ()
+  qux[({type L[A[_]] = Unit})#L]
+  qux[Lambda[A[_] => Unit]]
 }

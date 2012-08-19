@@ -36,18 +36,37 @@ with Transform with TypingTransformers with TreeDSL {
     override def transform(tree: Tree): Tree = {
 
       /**
+       * Handy way to build the bounds that we'll frequently be using.
+       */
+      def bounds = TypeBoundsTree(
+        Select(Select(Ident("_root_"), "scala"), newTypeName("Nothing")),
+        Select(Select(Ident("_root_"), "scala"), newTypeName("Any"))
+      )
+
+      /**
+       * Handy way to make a TypeName from a Name.
+       */
+      def makeTypeName(name:Name) = newTypeName(name.toString)
+
+      /**
        * We use this to create type parameters inside our type project, e.g.
        * the A in: ({type L[A] = (A, Int) => A})#L.
        */
-      def createInnerTypeParam(name:String) = TypeDef(
-        Modifiers(PARAM),
-        newTypeName(name),
-        Nil,
-        TypeBoundsTree(
-          Select(Select(Ident("_root_"), "scala"), newTypeName("Nothing")),
-          Select(Select(Ident("_root_"), "scala"), newTypeName("Any"))
-        )
-      )
+      def makeTypeParam(name:Name) = {
+        TypeDef(Modifiers(PARAM), makeTypeName(name), Nil, bounds)
+      }
+
+      /**
+       * Like makeTypeParam, but can be used recursively in the case of types
+       * that are themselves parameterized.
+       */
+      def makeComplexTypeParam(t:Tree):TypeDef = t match {
+        case TypeDef(m, nm, ps, bs) => {
+          TypeDef(Modifiers(PARAM), nm, ps.map(makeComplexTypeParam), bs)
+        }
+        case Ident(name) => makeTypeParam(name)
+        case x => sys.error("no no %s (%s)" format (x, x.getClass.getName))
+      }
 
       /**
        * Given the list a::as, this method finds the last argument in the list
@@ -67,7 +86,7 @@ with Transform with TypingTransformers with TreeDSL {
        * given List("A", "B") and <(A, Int, B)> we are generating a tree for
        * ({type L[A, B] = (A, Int, B)})#L.
        */
-      def buildTypeProjection(innerNames:List[String], subtree:Tree) = {
+      def makeTypeProjection(innerTypes:List[TypeDef], subtree:Tree) = {
         SelectFromTypeTree(
           CompoundTypeTree(
             Template(
@@ -76,7 +95,7 @@ with Transform with TypingTransformers with TreeDSL {
               TypeDef(
                 Modifiers(0),
                 newTypeName("L_kp"),
-                innerNames.map(s => createInnerTypeParam(s)),
+                innerTypes,
                 super.transform(subtree)
               ) :: Nil
             )
@@ -91,13 +110,20 @@ with Transform with TypingTransformers with TreeDSL {
        */
       def handleLambda(a:Tree, as:List[Tree]) = {
         val (args, subtree) = parseLambda(a, as, Nil)
-        val innerNames = args.map {
-          case Ident(name) => name.toString
+        val innerTypes = args.map {
+          case Ident(name) => makeTypeParam(name)
+
+          case ExistentialTypeTree(AppliedTypeTree(Ident(name), ps), _) => {
+            val tparams = ps.map(makeComplexTypeParam)
+            TypeDef(Modifiers(PARAM), makeTypeName(name), tparams, bounds)
+          }
+
           case x => {
-            unit.error(x.pos, "Identifier expected, found %s" format x); ""
+            unit.error(x.pos, "Identifier expected, found %s" format x)
+            null.asInstanceOf[TypeDef]
           }
         }
-        buildTypeProjection(innerNames, subtree)
+        makeTypeProjection(innerTypes, subtree)
       }
 
       /**
@@ -112,15 +138,17 @@ with Transform with TypingTransformers with TreeDSL {
           case (a, i) => super.transform(a)
         }
 
-        // get a list of all names generated for placeholders.
-        val innerNames = args.map(_.toString).filter(_ startsWith "X_kp")
+        // for each placeholder, create a type parameter
+        val innerTypes = args.collect {
+          case Ident(name) if name.startsWith("X_kp") => makeTypeParam(name)
+        }
 
         // if we didn't have any placeholders use the normal transformation.
         // otherwise build a type projection.
-        if (innerNames.isEmpty) {
+        if (innerTypes.isEmpty) {
           super.transform(tree)
         } else {
-          buildTypeProjection(innerNames, AppliedTypeTree(t, args))
+          makeTypeProjection(innerTypes, AppliedTypeTree(t, args))
         }
       }
 
