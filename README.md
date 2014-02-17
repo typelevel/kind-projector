@@ -85,7 +85,24 @@ You can also use unicode if you like that sort of thing:
 λ[(A, B) => Either[A, Option[B]]]
 ```
 
-### Building
+### Using the plugin
+
+To use this plugin in your own projects, add the following lines to
+your `build.sbt` file:
+
+```scala
+resolvers += "bintray/non" at "http://dl.bintray.com/non/maven"
+
+// for scala 2.10
+addCompilerPlugin("org.spire-math" % "kind-projector_2.10" % "0.4.0")
+
+// for scala 2.9.3
+//addCompilerPlugin("org.spire-math" % "kind-projector_2.9.3" % "0.4.0")
+```
+
+That's it!
+
+### Building the plugin
 
 You can build kind-projector using SBT 0.11.2 or newer.
 
