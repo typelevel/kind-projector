@@ -147,10 +147,10 @@ Lambda[(A, B[_]) => B[A]]
 
 ### Future Work
 
-Variance annotations are not yet supported. It's like that the wilcard
-syntax will use `+?` and `-?`, e.g. `Function2[-?, Int, +?]`.
+Variance annotations are not yet supported. It's likely that the
+wilcard syntax will use `+?` and `-?`, e.g. `Function2[-?, Int, +?]`.
 
-The right approach for the lambda syntax is a bit less clear; possible
+It's a bit less clear what the lambda syntax should use. Possible
 candidates are:
 
  * `Lambda[(-[A], +[B]) => Function2[A, Int, B]]`
