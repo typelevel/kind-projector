@@ -122,7 +122,7 @@ command-line. For instance:
 scalac -Xplugin:kind-projector_2.10-0.4.0.jar test.scala
 ```
 
-### Errata
+### Known issues & errata
 
 There have been suggestions for better syntax, like
 `[A, B]Either[B, A]` or `[A, B] => Either[B, A]` instead of
@@ -137,8 +137,7 @@ to define a type lambda the way we use `3 + _` to define a
 function. Unfortunately, it's probably too late to modify the meaning
 of _, which is why we chose to use `?` instead.
 
-Support for existentials has recently been added, although it isn't
-yet well tested. (As if anything in this plugin is!) The syntax is as
+Support for existentials has recently been added. The syntax is as
 follows:
 
 ```scala
