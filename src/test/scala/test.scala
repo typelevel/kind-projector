@@ -45,4 +45,18 @@ object Test {
   def hex[T[_[_[_[_]]]]] = ()
   hex[({type L[A[_[_[_]]]] = Unit})#L]
   hex[Lambda[A[_[_[_]]] => Unit]]
+
+  // covariant
+  def mux[T[+_]] = ()
+  mux[({type L[+A] = Either[A, Int]})#L]
+  mux[Either[+?, Int]]
+  mux[Lambda[`+A` => Either[A, Int]]]
+  mux[Lambda[+[A] => Either[A, Int]]]
+
+  // contravariant
+  def bux[T[-_, +_]] = ()
+  bux[({type L[-A, +B] = Function2[A, Int, B]})#L]
+  bux[Function2[-?, Int, +?]]
+  bux[Lambda[(`-A`, `+B`) => Function2[A, Int, B]]]
+  bux[Lambda[(-[A], +[B]) => Function2[A, Int, B]]]
 }

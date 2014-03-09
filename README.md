@@ -39,53 +39,13 @@ One problem with this approach is that it changes the meaning of
 (potentially) valid programs. In practice this means that you must
 avoid defining the following identifiers:
 
- 1. Lambda
- 2. λ
- 3. ?
- 4. L_kp
- 5. X_kp0, X_kp1, ...
+ 1. `Lambda` and `λ`
+ 2. `?`, `+?`, and `-?`
+ 4. `L_kp`
+ 5. `X_kp0`, `X_kp1`, ...
 
-If you find yourself using lots of type lambdas, and you don't mind reserving
-those identifiers, then this compiler plugin is for you!
-
-### Examples
-
-Two syntaxes are supported. The first resembles the `_ + _` syntax for
-anonymous functions and turns things like: 
-
-```scala
-Either[?, Double]
-Tuple3[Int, ?, ?]
-```
-
-into type projections like:
-
-```scala
-({type L_kp[X_kp0] = Either[X_kp0, Double]})#L_kp
-({type L_kp[X_kp1, X_kp2] = Tuple3[Int, X_kp1, X_kp2]})#L_kp
-```
-
-The second resembles the `(x, y) => x + y` syntax for anonymous functions and
-turns things like:
-
-```scala
-Lambda[A => (A, A)]
-Lambda[(A, B) => Either[A, Option[B]]]
-```
-
-into type projections like:
-
-```scala
-({type L_kp[A] = (A, A)})#L_kp
-({type L_kp[A, B] = Either[A, Option[B]]})#L_kp
-```
-
-You can also use unicode if you like that sort of thing:
-
-```scala
-λ[A => (A, A)]
-λ[(A, B) => Either[A, Option[B]]]
-```
+If you find yourself using lots of type lambdas, and you don't mind
+reserving those identifiers, then this compiler plugin is for you!
 
 ### Using the plugin
 
@@ -96,13 +56,110 @@ your `build.sbt` file:
 resolvers += "bintray/non" at "http://dl.bintray.com/non/maven"
 
 // for scala 2.10
-addCompilerPlugin("org.spire-math" % "kind-projector_2.10" % "0.4.0")
+addCompilerPlugin("org.spire-math" % "kind-projector_2.10" % "0.5.0")
 
 // for scala 2.9.3
-//addCompilerPlugin("org.spire-math" % "kind-projector_2.9.3" % "0.4.0")
+//addCompilerPlugin("org.spire-math" % "kind-projector_2.9.3" % "0.5.0")
 ```
 
 That's it!
+
+### Inline Syntax
+
+The simplest syntax to use is the inline syntax. This syntax resembles
+Scala's use of underscores to define anonymous functions like `_ + _`.
+
+Since underscore is used for existential types in Scala (and it is
+probably too late to change this syntax), we use `?` for the same
+purpose. We also use `+?` and `-?` to handle covariant and
+contravariant types parameters.
+
+Here are a few examples:
+
+```scala
+Tuple2[?, Double]   // equivalent to: type R[A] = Tuple2[A, Double]
+Either[Int, +?]     // equivalent to: type R[+A] = Either[Int, A]
+Tuple3[?, Long, ?]  // equivalent to: type R[A, B] = Tuple3[A, Long, B]
+```
+
+As you can see, this syntax works when each type parameter in the type
+lambda is only used in the body once, and in the same order. For more
+complex type lambda expressions, you will need to use the function
+syntax.
+
+### Function Syntax
+
+The more powerful syntax to use is the function syntax. This syntax
+resembles anonymous functions like `x => x + 1` or `(x, y) => x + y`.
+In the case of type lambdas, we wrap the entire function type in a
+`Lambda` or `λ` type. Both names are equivalent: the former may be
+easier to type or say, and the latter is less verbose.
+
+Here are some examples:
+
+```scala
+Lambda[A => (A, A)]             // equivalent to: type R[A] = (A, A)
+Lambda[(A, B) => Either[B, A]]  // equivalent to: type R[A, B] = Either[B, A]
+Lambda[A => Either[A, List[A]]  // equivalent to: type R[A] = Either[A, List[A]]
+```
+
+Since types like `(+A, +B) => Either[A, B]` are not syntactically
+valid, we provide two alternate methods to specify variance when using
+function syntax:
+
+ * Plus/minus: `(+[A], +[B]) => Either[A, B]`
+ * Backticks: ``(`+A`, `+B`) => Either[A, B]``
+
+(Note that unlike names like `?`, `+` and `-` do not have to be
+reserved. They will only be interpreted this way when used in
+parameters to `Lambda[...]` types, which should never conflict with
+other usage.)
+
+Here are some examples with variance:
+
+```scala
+λ[`-A` => Function1[A, Double]]         // equivalent to: type R[-A] = Function1[A, Double]
+λ[(-[A], +[B]) => Function2[A, Int, B]] // equivalent to: type R[-A, +B] = Function2[A, Int, B]
+λ[`+A` => Either[List[A], List[A]]      // equivalent to: type R[+A] = Either[List[A], List[A]]
+```
+
+The function syntax also supports higher-kinded types as type
+parameters. The syntax overloads the existential syntax in this case
+(since the type parameters to a type lambda should never contain an
+existential).
+
+Here are a few examples with higher-kinded types:
+
+```scala
+Lambda[A[_] => List[A[Int]]]  // equivalent to: type R[A[_]] = List[A[Int]]
+Lambda[(A, B[_]) => B[A]]     // equivalent to: type R[A, B[_]] = B[A]
+```
+
+### Under The Hood
+
+This section shows the exact code produced for a few type lambda
+expressions.
+
+```scala
+Either[Int, ?]
+({type L_kp[X_kp1] = (Int, X_kp1)})#L_kp
+
+Function2[-?, String, +?]
+({type L_kp[-X_kp0, +X_kp2] = Function2[X_kp0, String, X_kp2)})#L_kp
+
+Lambda[A => (A, A)]
+({type L_kp[A] = (A, A)})#L_kp
+
+Lambda[(`+A`, B) => Either[A, Option[B]]]
+({type L_kp[+A, B] = Either[A, Option[B]]})#L_kp
+
+Lambda[(A, B[_]) => B[A]]
+({type L_kp[A, B[_]] = B[A]})#L_kp
+```
+
+As you can see, the reason that names like `L_kp` and `X_kp0` are
+forbidden is that they would potentially conflict with the names of
+types generated by the plugin.
 
 ### Building the plugin
 
@@ -113,13 +170,13 @@ Here are some useful targets:
  * compile: compile the code
  * package: build the plugin jar
  * test: compile the test files (no tests run; compilation is the test)
- * console: you can play around with the plugin using the console
+ * console: launch a REPL with the plugin loaded so you can play around
 
 You can use the plugin with `scalac` by specifying it on the
 command-line. For instance:
 
 ```
-scalac -Xplugin:kind-projector_2.10-0.4.0.jar test.scala
+scalac -Xplugin:kind-projector_2.10-0.5.0.jar test.scala
 ```
 
 ### Known issues & errata
@@ -137,37 +194,21 @@ to define a type lambda the way we use `3 + _` to define a
 function. Unfortunately, it's probably too late to modify the meaning
 of _, which is why we chose to use `?` instead.
 
-Support for existentials has recently been added. The syntax is as
-follows:
-
-```scala
-Lambda[A[_] => List[A[Int]]]
-Lambda[(A, B[_]) => B[A]]
-```
-
 ### Future Work
 
-Variance annotations are not yet supported. It's likely that the
-wilcard syntax will use `+?` and `-?`, e.g. `Function2[-?, Int, +?]`.
+As of 0.5.0, kind-projector should be able to support any type lambda
+that can be expressed via type projections. If you come across a type
+for which kind-projector lacks a syntax, please report it.
 
-It's a bit less clear what the lambda syntax should use. Possible
-candidates are:
-
- * `Lambda[(-[A], +[B]) => Function2[A, Int, B]]`
- * `Lambda[(-_A, +_B) => Function2[A, Int, B]]`
- 
- (Obviously, other names could be used instead of `+` and `-` here.)
- 
 ### Disclaimers
 
-This is only working in the most fragile sense. If you try "fancy"
-things like `Either[Int, ?][Double]`, you will probably not like the
-result. This project is clearly an abuse of the compiler plugin
-framework and the author disclaims all warranty or liability of any
-kind.
+Kind projector is an unusual compiler plugin in that it runs *before*
+the `typer` phase. This means that the rewrites and renaming we are
+doing is relatively fragile, and the author disclaims all warranty or
+liability of any kind.
 
-That said, if you end up using this plugin, even in a toy project,
-please let me know!
+If you are using kind-projector in one of your projects, please feel
+free to get in touch to report problems (or a lack of problems)!
 
 ### Copyright and License
 

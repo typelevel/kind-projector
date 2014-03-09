@@ -31,12 +31,15 @@ class KindRewriter(plugin: Plugin, val global: Global)
   class MyTransformer(unit: CompilationUnit) extends TypingTransformer(unit) {
 
     // reserve some names
-    val tlambda1    = newTypeName("Lambda")
-    val tlambda2    = newTypeName("λ")
-    val placeholder = newTypeName("$qmark")
+    val TypeLambda1 = newTypeName("Lambda")
+    val TypeLambda2 = newTypeName("λ")
+    val Placeholder = newTypeName("$qmark")
+    val CoPlaceholder = newTypeName("$plus$qmark")
+    val ContraPlaceholder = newTypeName("$minus$qmark")
 
-    val covariant     = newTypeName("$plus$qmark")
-    val contravariant = newTypeName("$minus$qmark")
+    // these will be used for matching but aren't reserved
+    val Plus = newTypeName("$plus")
+    val Minus = newTypeName("$minus")
 
     override def transform(tree: Tree): Tree = {
 
@@ -55,11 +58,33 @@ class KindRewriter(plugin: Plugin, val global: Global)
       def makeTypeParam(name: Name) =
         TypeDef(Modifiers(PARAM), makeTypeName(name), Nil, bounds)
 
+      // Like makeTypeParam but with covariance, e.g.
+      // ({type L[+A] = ... })#L.
+      def makeTypeParamCo(name: Name) =
+        TypeDef(Modifiers(PARAM | COVARIANT), makeTypeName(name), Nil, bounds)
+
+      // Like makeTypeParam but with contravariance, e.g.
+      // ({type L[-A] = ... })#L.
+      def makeTypeParamContra(name: Name) =
+        TypeDef(Modifiers(PARAM | CONTRAVARIANT), makeTypeName(name), Nil, bounds)
+
+      // Detects which makeTypeParam* method to call based on name.
+      // Names like +A are covariant, names like -A are contravariant,
+      // all others are invariant.
+      def makeTypeParamFromName(name: Name) =
+        if (name.startsWith("$plus")) {
+          makeTypeParamCo(newTypeName(name.toString.substring(5)))
+        } else if (name.startsWith("$minus")) {
+          makeTypeParamContra(newTypeName(name.toString.substring(6)))
+        } else {
+          makeTypeParam(name)
+        }
+
       // Like makeTypeParam, but can be used recursively in the case of types
       // that are themselves parameterized.
       def makeComplexTypeParam(t: Tree): TypeDef = t match {
         case Ident(name) =>
-          makeTypeParam(name)
+          makeTypeParamFromName(name)
 
         case TypeDef(m, nm, ps, bs) =>
           TypeDef(Modifiers(PARAM), nm, ps.map(makeComplexTypeParam), bs)
@@ -105,7 +130,13 @@ class KindRewriter(plugin: Plugin, val global: Global)
         val (args, subtree) = parseLambda(a, as, Nil)
         val innerTypes = args.map {
           case Ident(name) =>
-            makeTypeParam(name)
+            makeTypeParamFromName(name)
+
+          case AppliedTypeTree(Ident(Plus), Ident(name) :: Nil) =>
+            makeTypeParamCo(name)
+
+          case AppliedTypeTree(Ident(Minus), Ident(name) :: Nil) =>
+            makeTypeParamContra(name)
 
           case AppliedTypeTree(Ident(name), ps) =>
             val tparams = ps.map(makeComplexTypeParam)
@@ -127,15 +158,21 @@ class KindRewriter(plugin: Plugin, val global: Global)
       def handlePlaceholders(t: Tree, as: List[Tree]) = {
         // create a new type argument list, catching placeholders and create
         // individual identifiers for them.
-        val args = as.zipWithIndex.map {
-          case (Ident(`placeholder`), i) => Ident(newTypeName("X_kp%d" format i))
-          case (a, i) => super.transform(a)
+        val xyz = as.zipWithIndex.map {
+          case (Ident(Placeholder), i) => (Ident(newTypeName("X_kp%d" format i)), Some(Placeholder))
+          case (Ident(CoPlaceholder), i) => (Ident(newTypeName("X_kp%d" format i)), Some(CoPlaceholder))
+          case (Ident(ContraPlaceholder), i) => (Ident(newTypeName("X_kp%d" format i)), Some(ContraPlaceholder))
+          case (a, i) => (super.transform(a), None)
         }
 
         // for each placeholder, create a type parameter
-        val innerTypes = args.collect {
-          case Ident(name) if name.startsWith("X_kp") => makeTypeParam(name)
+        val innerTypes = xyz.collect {
+          case (Ident(name), Some(Placeholder)) => makeTypeParam(name)
+          case (Ident(name), Some(CoPlaceholder)) => makeTypeParamCo(name)
+          case (Ident(name), Some(ContraPlaceholder)) => makeTypeParamContra(name)
         }
+
+        val args = xyz.map(_._1)
 
         // if we didn't have any placeholders use the normal transformation.
         // otherwise build a type projection.
@@ -145,11 +182,11 @@ class KindRewriter(plugin: Plugin, val global: Global)
 
       tree match {
         // Lambda[A => Either[A, Int]] case.
-        case AppliedTypeTree(Ident(`tlambda1`), AppliedTypeTree(_, a :: as) :: Nil) =>
+        case AppliedTypeTree(Ident(TypeLambda1), AppliedTypeTree(_, a :: as) :: Nil) =>
           handleLambda(a, as)
 
         // λ[A => Either[A, Int]] case.
-        case AppliedTypeTree(Ident(`tlambda2`), AppliedTypeTree(_, a :: as) :: Nil) =>
+        case AppliedTypeTree(Ident(TypeLambda2), AppliedTypeTree(_, a :: as) :: Nil) =>
           handleLambda(a, as)
 
         // Either[?, Int] case (if no ? present this is a noop)
