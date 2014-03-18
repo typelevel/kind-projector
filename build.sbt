@@ -13,8 +13,6 @@ libraryDependencies <++= (scalaVersion) {
 }
 
 scalacOptions ++= Seq(
-  "-feature",
-  "-language:_",
   "-deprecation",
   "-unchecked"
 )
