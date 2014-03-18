@@ -181,6 +181,9 @@ class KindRewriter(plugin: Plugin, val global: Global)
       }
 
       tree match {
+        case Template(parents, self, body) =>
+          Template(parents.map(transform), self, body.map(transform))
+
         // Lambda[A => Either[A, Int]] case.
         case AppliedTypeTree(Ident(TypeLambda1), AppliedTypeTree(_, a :: as) :: Nil) =>
           handleLambda(a, as)

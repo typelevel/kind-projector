@@ -2,7 +2,7 @@ name := "kind-projector"
 
 organization := "org.spire-math"
 
-version := "0.5.0"
+version := "0.5.1"
 
 scalaVersion := "2.10.3"
 
@@ -13,6 +13,8 @@ libraryDependencies <++= (scalaVersion) {
 }
 
 scalacOptions ++= Seq(
+  "-feature",
+  "-language:_",
   "-deprecation",
   "-unchecked"
 )
