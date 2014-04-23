@@ -108,6 +108,9 @@ class KindRewriter(plugin: Plugin, val global: Global)
           case h :: t => parseLambda(h, t, a :: stack)
         }
 
+      // TODO: If we drop 2.9 support, we should use TermName("_")
+      // instead of "_".
+
       // Builds the horrendous type projection tree. To remind the reader,
       // given List("A", "B") and <(A, Int, B)> we are generating a tree for
       // ({type L[A, B] = (A, Int, B)})#L.

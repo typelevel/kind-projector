@@ -55,11 +55,14 @@ your `build.sbt` file:
 ```scala
 resolvers += "bintray/non" at "http://dl.bintray.com/non/maven"
 
+// for scala 2.11
+addCompilerPlugin("org.spire-math" % "kind-projector_2.11" % "0.5.2")
+
 // for scala 2.10
-addCompilerPlugin("org.spire-math" % "kind-projector_2.10" % "0.5.1")
+addCompilerPlugin("org.spire-math" % "kind-projector_2.10" % "0.5.2")
 
 // for scala 2.9.3
-//addCompilerPlugin("org.spire-math" % "kind-projector_2.9.3" % "0.5.1")
+//addCompilerPlugin("org.spire-math" % "kind-projector_2.9.3" % "0.5.2)
 ```
 
 That's it!

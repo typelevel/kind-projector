@@ -2,7 +2,7 @@ name := "kind-projector"
 
 organization := "org.spire-math"
 
-version := "0.5.1"
+version := "0.5.2"
 
 scalaVersion := "2.10.3"
 
@@ -25,7 +25,7 @@ scalacOptions in Test <+= (packageBin in Compile) map {
   pluginJar => "-Xplugin:" + pluginJar
 }
 
-crossScalaVersions := Seq("2.9.3")
+crossScalaVersions := Seq("2.9.3", "2.11.0")
 
 seq(bintrayPublishSettings: _*)
 
