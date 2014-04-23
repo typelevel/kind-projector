@@ -147,7 +147,7 @@ expressions.
 Either[Int, ?]
 ({type L_kp[X_kp1] = (Int, X_kp1)})#L_kp
 
-type Function2[-?, String, +?]
+Function2[-?, String, +?]
 ({type L_kp[-X_kp0, +X_kp2] = Function2[X_kp0, String, X_kp2)})#L_kp
 
 Lambda[A => (A, A)]
