@@ -162,17 +162,28 @@ class KindRewriter(plugin: Plugin, val global: Global)
         // create a new type argument list, catching placeholders and create
         // individual identifiers for them.
         val xyz = as.zipWithIndex.map {
-          case (Ident(Placeholder), i) => (Ident(newTypeName("X_kp%d" format i)), Some(Placeholder))
-          case (Ident(CoPlaceholder), i) => (Ident(newTypeName("X_kp%d" format i)), Some(CoPlaceholder))
-          case (Ident(ContraPlaceholder), i) => (Ident(newTypeName("X_kp%d" format i)), Some(ContraPlaceholder))
-          case (a, i) => (super.transform(a), None)
+          case (Ident(Placeholder), i) =>
+            (Ident(newTypeName("X_kp%d" format i)), Some(Right(Placeholder)))
+          case (Ident(CoPlaceholder), i) =>
+            (Ident(newTypeName("X_kp%d" format i)), Some(Right(CoPlaceholder)))
+          case (Ident(ContraPlaceholder), i) =>
+            (Ident(newTypeName("X_kp%d" format i)), Some(Right(ContraPlaceholder)))
+          case (ExistentialTypeTree(AppliedTypeTree(Ident(Placeholder), ps), _), i) =>
+            (Ident(newTypeName("X_kp%d" format i)), Some(Left(ps.map(makeComplexTypeParam))))
+          case (a, i) =>
+            (super.transform(a), None)
         }
 
         // for each placeholder, create a type parameter
         val innerTypes = xyz.collect {
-          case (Ident(name), Some(Placeholder)) => makeTypeParam(name)
-          case (Ident(name), Some(CoPlaceholder)) => makeTypeParamCo(name)
-          case (Ident(name), Some(ContraPlaceholder)) => makeTypeParamContra(name)
+          case (Ident(name), Some(Right(Placeholder))) =>
+            makeTypeParam(name)
+          case (Ident(name), Some(Right(CoPlaceholder))) =>
+            makeTypeParamCo(name)
+          case (Ident(name), Some(Right(ContraPlaceholder))) =>
+            makeTypeParamContra(name)
+          case (Ident(name), Some(Left(tparams))) =>
+            TypeDef(Modifiers(PARAM), makeTypeName(name), tparams, bounds)
         }
 
         val args = xyz.map(_._1)

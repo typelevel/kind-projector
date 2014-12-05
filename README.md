@@ -83,6 +83,7 @@ Here are a few examples:
 Tuple2[?, Double]        // equivalent to: type R[A] = Tuple2[A, Double]
 Either[Int, +?]          // equivalent to: type R[+A] = Either[Int, A]
 Function2[-?, Long, +?]  // equivalent to: type R[-A, +B] = Function2[A, Long, B]
+EitherT[?[_], Int, ?]    // equivalent to: type R[F[_], B] = EitherT[F, A, B]
 ```
 
 As you can see, this syntax works when each type parameter in the type
@@ -183,6 +184,30 @@ scalac -Xplugin:kind-projector_2.10-0.5.0.jar test.scala
 
 ### Known issues & errata
 
+It is not currently possible to specify variance for type parameters
+of arguments to a type lambda. Huh???
+
+Here's an example that highlights this issue:
+
+```scala
+def xyz[F[_[+_]]] = 12345
+trait Q1[A[_], B[_]]
+trait Q2[A[+_], B[+_]]
+
+// we can use kind-projector to adapt Q1 for xyz
+xyz[Q1[?[_], List]]        // ok
+xyz[λ[x[_] => Q1[x, List]] // also ok
+
+// however, we can't adapt Q2 to xyz due to "deep covariance"
+// we have to use a "raw" type projection
+xyz[({type L[x[+_]] = Q[x, List]})#L]
+```
+
+The reason for this shortcoming is syntactic -- there isn't a good way
+to encode this in syntax that the parser will accept. Fortunately this
+possible edge case is pretty obscure (so far, no actual users have
+needed to do this in the wild.)
+
 There have been suggestions for better syntax, like
 `[A, B]Either[B, A]` or `[A, B] => Either[B, A]` instead of
 `Lambda[(A, B) => Either[B, A]]`.  Unfortunately this would actually
@@ -195,6 +220,9 @@ types the way we do for values, so that we could use `Either[Int, _]`
 to define a type lambda the way we use `3 + _` to define a
 function. Unfortunately, it's probably too late to modify the meaning
 of `_`, which is why we chose to use `?` instead.
+
+*Update: the Typelevel compiler contains a built-in syntax for
+[type lambdas!](https://github.com/typelevel/scala/wiki/Differences#type-lambdas)*
 
 ### Future Work
 
