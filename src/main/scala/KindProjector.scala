@@ -122,10 +122,10 @@ class KindRewriter(plugin: Plugin, val global: Global)
               ValDef(Modifiers(0), "_", TypeTree(), EmptyTree),
               TypeDef(
                 Modifiers(0),
-                newTypeName("L_kp"),
+                newTypeName("Λ"),
                 innerTypes,
                 super.transform(subtree)) :: Nil)),
-          newTypeName("L_kp"))
+          newTypeName("Λ"))
 
       // This method handles the explicit type lambda case, e.g.
       // Lambda[(A, B) => Function2[A, Int, B]] case.
@@ -162,9 +162,9 @@ class KindRewriter(plugin: Plugin, val global: Global)
         // create a new type argument list, catching placeholders and create
         // individual identifiers for them.
         val xyz = as.zipWithIndex.map {
-          case (Ident(Placeholder), i) => (Ident(newTypeName("X_kp%d" format i)), Some(Placeholder))
-          case (Ident(CoPlaceholder), i) => (Ident(newTypeName("X_kp%d" format i)), Some(CoPlaceholder))
-          case (Ident(ContraPlaceholder), i) => (Ident(newTypeName("X_kp%d" format i)), Some(ContraPlaceholder))
+          case (Ident(Placeholder), i) => (Ident(newTypeName("α%d" format i)), Some(Placeholder))
+          case (Ident(CoPlaceholder), i) => (Ident(newTypeName("α%d" format i)), Some(CoPlaceholder))
+          case (Ident(ContraPlaceholder), i) => (Ident(newTypeName("α%d" format i)), Some(ContraPlaceholder))
           case (a, i) => (super.transform(a), None)
         }
 
