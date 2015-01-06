@@ -166,7 +166,7 @@ written as:
 Functor[Lambda[a => Future[List[a]]]]
 ```
 
-Other types which cannot be written correctly using infix syntax are:
+Other types which cannot be written correctly using inline syntax are:
 
  * `Lambda[a => (a, a)]` (repeated use of `a`).
  * `Lambda[(a, b) => Either[b, a]` (reverse order of type params).
