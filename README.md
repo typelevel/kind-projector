@@ -148,13 +148,23 @@ express.
 For example, imagine that we have `trait Functor[F[_]]`.
 
 You might want to write `Functor[Future[List[?]]]`, expecting to get
-`type X[a] = Future[List[a]]` and `Functor[X]`. However, `?` always
-binds at the tightest level, meaning that `List[?]` is interpreted as
-`type X[a] = List[a]`, and `Future[List[?]]` is invalid.
+something like:
+
+```scala
+type X[a] = Future[List[a]]
+Functor[X]
+```
+
+However, `?` always binds at the tightest level, meaning that
+`List[?]` is interpreted as `type X[a] = List[a]`, and that
+`Future[List[?]]` is invalid.
 
 In these cases you should prefer the lambda syntax, which would be
-written as `Functor[Lambda[a => Future[List[a]]]]`, and interpreted as
-expected.
+written as:
+
+```scala
+Functor[Lambda[a => Future[List[a]]]]
+```
 
 Other types which cannot be written correctly using infix syntax are:
 
