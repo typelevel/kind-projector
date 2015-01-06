@@ -139,6 +139,32 @@ Lambda[A[_] => List[A[Int]]]  // equivalent to: type R[A[_]] = List[A[Int]]
 Lambda[(A, B[_]) => B[A]]     // equivalent to: type R[A, B[_]] = B[A]
 ```
 
+### Gotchas
+
+The inline syntax is the tersest and is often preferable when
+possible. However, there are some type lambdas which it cannot
+express.
+
+For example, imagine that we have `trait Functor[F[_]]`.
+
+You might want to write `Functor[Future[List[?]]]`, expecting to get
+`type X[a] = Future[List[a]]` and `Functor[X]`. However, `?` always
+binds at the tightest level, meaning that `List[?]` is interpreted as
+`type X[a] = List[a]`, and `Future[List[?]]` is invalid.
+
+In these cases you should prefer the lambda syntax, which would be
+written as `Functor[Lambda[a => Future[List[a]]]]`, and interpreted as
+expected.
+
+Other types which cannot be written correctly using infix syntax are:
+
+ * `Lambda[a => (a, a)]` (repeated use of `a`).
+ * `Lambda[(a, b) => Either[b, a]` (reverse order of type params).
+ * `Lambda[(a, b) => Function1[a, Option[b]]` (similar to example).
+ 
+(And of course, you can use `λ[...]` instead of `Lambda[...]` in any
+of these expressions.)
+
 ### Under The Hood
 
 This section shows the exact code produced for a few type lambda
