@@ -12,6 +12,8 @@ import nsc.symtab.Flags._
 import nsc.ast.TreeDSL
 import nsc.typechecker
 
+import scala.reflect.NameTransformer
+
 class KindProjector(val global: Global) extends Plugin {
   val name = "kind-projector"
   val description = "Expand type lambda syntax"
@@ -41,9 +43,9 @@ class KindRewriter(plugin: Plugin, val global: Global)
     val Plus = newTypeName("$plus")
     val Minus = newTypeName("$minus")
 
-    val UpperBound = """^(.+?)(?:\$u0020)+\$less\$colon(?:\$u0020)+(.+?)$""".r
-    val LowerBound = """^(.+?)(?:\$u0020)+\$greater\$colon(?:\$u0020)+(.+?)$""".r
-    val LowerAndUpperBounds = """^(.+?)(?:\$u0020)+\$greater\$colon(?:\$u0020)+(.+?)(?:\$u0020)+\$less\$colon(?:\$u0020)+(.+?)$""".r
+    val UpperBound = """^(.+?) +<: +(.+?)$""".r
+    val LowerBound = """^(.+?) +>: +(.+?)$""".r
+    val LowerAndUpperBounds = """^(.+?) +>: +(.+?) +<: +(.+?)$""".r
 
     def rssi(b: String, c: String) =
       Select(Select(Ident("_root_"), b), newTypeName(c))
@@ -59,7 +61,7 @@ class KindRewriter(plugin: Plugin, val global: Global)
           case h :: Nil => Select(curr, newTypeName(h))
           case h :: ts => parseDotted(Select(curr, h), ts)
         }
-      s.split("\\$u002E").toList match {
+      s.split('.').toList match {
         case Nil => sys.error("unpossible")
         case h :: Nil => Ident(newTypeName(h))
         case h :: ts => parseDotted(Ident(h), ts)
@@ -90,7 +92,7 @@ class KindRewriter(plugin: Plugin, val global: Global)
       // Detects which makeTypeParam method to call based on name,
       // as well as what bounds (if any) to apply
       def makeTypeParamFromName(name: Name) = {
-        val (n, bs) = name.toString match {
+        val (n, bs) = NameTransformer.decode(name.toString) match {
           case LowerAndUpperBounds(name, lower, upper) =>
             (newTermName(name), TypeBoundsTree(parseBoundString(lower), parseBoundString(upper)))
           case LowerBound(name, lower) =>
@@ -109,9 +111,9 @@ class KindRewriter(plugin: Plugin, val global: Global)
       // Names like +A are covariant, names like -A are contravariant,
       // all others are invariant.
       def makeTypeParamFromName0(name: Name, bounds: TypeBoundsTree = DefaultBounds) =
-        if (name.startsWith("$plus")) {
+        if (name.startsWith("+")) {
           makeTypeParamCo(newTypeName(name.toString.substring(5)), bounds)
-        } else if (name.startsWith("$minus")) {
+        } else if (name.startsWith("-")) {
           makeTypeParamContra(newTypeName(name.toString.substring(6)), bounds)
         } else {
           makeTypeParam(name, bounds)
