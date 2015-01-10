@@ -25,6 +25,8 @@ class KindRewriter(plugin: Plugin, val global: Global)
 
   import global._
 
+  val sp = new StringParser[global.type](global)
+
   val runsAfter = "parser" :: Nil
   val phaseName = "kind-projector"
 
@@ -43,30 +45,12 @@ class KindRewriter(plugin: Plugin, val global: Global)
     val Plus = newTypeName("$plus")
     val Minus = newTypeName("$minus")
 
-    val UpperBound = """^(.+?) +<: +(.+?)$""".r
-    val LowerBound = """^(.+?) +>: +(.+?)$""".r
-    val LowerAndUpperBounds = """^(.+?) +>: +(.+?) +<: +(.+?)$""".r
-
     def rssi(b: String, c: String) =
       Select(Select(Ident("_root_"), b), newTypeName(c))
 
     val NothingLower = rssi("scala", "Nothing")
     val AnyUpper = rssi("scala", "Any")
     val DefaultBounds = TypeBoundsTree(NothingLower, AnyUpper)
-
-    def parseBoundString(s: String): Tree = {
-      def parseDotted(curr: Tree, parts: List[String]): Tree =
-        parts match {
-          case Nil => curr
-          case h :: Nil => Select(curr, newTypeName(h))
-          case h :: ts => parseDotted(Select(curr, h), ts)
-        }
-      s.split('.').toList match {
-        case Nil => sys.error("unpossible")
-        case h :: Nil => Ident(newTypeName(h))
-        case h :: ts => parseDotted(Ident(h), ts)
-      }
-    }
 
     override def transform(tree: Tree): Tree = {
 
@@ -89,35 +73,14 @@ class KindRewriter(plugin: Plugin, val global: Global)
       def makeTypeParamContra(name: Name, bounds: TypeBoundsTree = DefaultBounds) =
         TypeDef(Modifiers(PARAM | CONTRAVARIANT), makeTypeName(name), Nil, bounds)
 
-      // Detects which makeTypeParam method to call based on name,
-      // as well as what bounds (if any) to apply
+      // Given a name, e.g. A or `+A` or `A <: Foo`, build a type
+      // parameter tree using the given name, bounds, variance, etc.
       def makeTypeParamFromName(name: Name) = {
-        val (n, bs) = NameTransformer.decode(name.toString) match {
-          case LowerAndUpperBounds(name, lower, upper) =>
-            (newTermName(name), TypeBoundsTree(parseBoundString(lower), parseBoundString(upper)))
-          case LowerBound(name, lower) =>
-            (newTermName(name), TypeBoundsTree(parseBoundString(lower), AnyUpper))
-          case UpperBound(name, upper) =>
-            val u = parseBoundString(upper)
-            println(u)
-            (newTermName(name), TypeBoundsTree(NothingLower, u))
-          case _ =>
-            (name, DefaultBounds)
-        }
-        makeTypeParamFromName0(n, bs)
+        val decoded = NameTransformer.decode(name.toString)
+        val src = s"type _X_[$decoded] = Unit"
+        val TypeDef(_, _, List(tpe), _) = sp.parse(src)
+        tpe
       }
-
-      // Detects which makeTypeParam* method to call based on name.
-      // Names like +A are covariant, names like -A are contravariant,
-      // all others are invariant.
-      def makeTypeParamFromName0(name: Name, bounds: TypeBoundsTree = DefaultBounds) =
-        if (name.startsWith("+")) {
-          makeTypeParamCo(newTypeName(name.toString.substring(5)), bounds)
-        } else if (name.startsWith("-")) {
-          makeTypeParamContra(newTypeName(name.toString.substring(6)), bounds)
-        } else {
-          makeTypeParam(name, bounds)
-        }
 
       // Like makeTypeParam, but can be used recursively in the case of types
       // that are themselves parameterized.

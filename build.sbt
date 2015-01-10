@@ -4,7 +4,7 @@ organization := "org.spire-math"
 
 version := "0.5.2"
 
-scalaVersion := "2.10.3"
+scalaVersion := "2.11.4"
 
 seq(bintrayResolverSettings: _*)
 
