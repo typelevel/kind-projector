@@ -6,19 +6,16 @@ import scala.tools.nsc.reporters.StoreReporter
 
 class StringParser[G <: Global](val global: G) {
   import global._
-  def parse(code: String): Tree = {
-    val sreporter = new StoreReporter()
+  def parse(code: String): Option[Tree] = {
     val oldReporter = global.reporter
     try {
-      global.reporter = sreporter
-      val parser = newUnitParser(new CompilationUnit(newSourceFile(code, "<kp>")))
-      val tree = gen.mkTreeOrBlock(parser.parseStatsOrPackages())
-      sreporter.infos.foreach {
-        case sreporter.Info(pos, msg, sreporter.ERROR) =>
-          throw ParseException(pos, msg)
-      }
-      tree
-    } finally global.reporter = oldReporter
+      val r = new StoreReporter()
+      global.reporter = r
+      val tree = newUnitParser(code).templateStats().headOption
+      if (r.infos.isEmpty) tree else None
+    } finally {
+      global.reporter = oldReporter
+    }
   }
 }
 

@@ -78,8 +78,10 @@ class KindRewriter(plugin: Plugin, val global: Global)
       def makeTypeParamFromName(name: Name) = {
         val decoded = NameTransformer.decode(name.toString)
         val src = s"type _X_[$decoded] = Unit"
-        val TypeDef(_, _, List(tpe), _) = sp.parse(src)
-        tpe
+        sp.parse(src) match {
+          case Some(TypeDef(_, _, List(tpe), _)) => tpe
+          case None => unit.error(tree.pos, s"Can't parse param: $name"); null
+        }
       }
 
       // Like makeTypeParam, but can be used recursively in the case of types
