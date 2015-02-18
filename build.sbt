@@ -4,7 +4,7 @@ organization := "org.spire-math"
 
 version := "0.5.2"
 
-scalaVersion := "2.10.3"
+scalaVersion := "2.11.4"
 
 seq(bintrayResolverSettings: _*)
 
@@ -25,7 +25,7 @@ scalacOptions in Test <+= (packageBin in Compile) map {
   pluginJar => "-Xplugin:" + pluginJar
 }
 
-crossScalaVersions := Seq("2.9.3", "2.11.0")
+crossScalaVersions := Seq("2.10.4", "2.11.4")
 
 seq(bintrayPublishSettings: _*)
 

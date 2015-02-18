@@ -12,6 +12,8 @@ import nsc.symtab.Flags._
 import nsc.ast.TreeDSL
 import nsc.typechecker
 
+import scala.reflect.NameTransformer
+
 class KindProjector(val global: Global) extends Plugin {
   val name = "kind-projector"
   val description = "Expand type lambda syntax"
@@ -22,6 +24,8 @@ class KindRewriter(plugin: Plugin, val global: Global)
     extends PluginComponent with Transform with TypingTransformers with TreeDSL {
 
   import global._
+
+  val sp = new StringParser[global.type](global)
 
   val runsAfter = "parser" :: Nil
   val phaseName = "kind-projector"
@@ -41,13 +45,14 @@ class KindRewriter(plugin: Plugin, val global: Global)
     val Plus = newTypeName("$plus")
     val Minus = newTypeName("$minus")
 
+    def rssi(b: String, c: String) =
+      Select(Select(Ident("_root_"), b), newTypeName(c))
+
+    val NothingLower = rssi("scala", "Nothing")
+    val AnyUpper = rssi("scala", "Any")
+    val DefaultBounds = TypeBoundsTree(NothingLower, AnyUpper)
+
     override def transform(tree: Tree): Tree = {
-
-      def rssi(b: String, c: String) = 
-        Select(Select(Ident("_root_"), b), newTypeName(c))
-
-      // Handy way to build the bounds that we'll frequently be using.
-      def bounds = TypeBoundsTree(rssi("scala", "Nothing"), rssi("scala", "Any"))
 
       // Handy way to make a TypeName from a Name.
       def makeTypeName(name: Name) =
@@ -55,30 +60,29 @@ class KindRewriter(plugin: Plugin, val global: Global)
 
       // We use this to create type parameters inside our type project, e.g.
       // the A in: ({type L[A] = (A, Int) => A})#L.
-      def makeTypeParam(name: Name) =
+      def makeTypeParam(name: Name, bounds: TypeBoundsTree = DefaultBounds) =
         TypeDef(Modifiers(PARAM), makeTypeName(name), Nil, bounds)
 
       // Like makeTypeParam but with covariance, e.g.
       // ({type L[+A] = ... })#L.
-      def makeTypeParamCo(name: Name) =
+      def makeTypeParamCo(name: Name, bounds: TypeBoundsTree = DefaultBounds) =
         TypeDef(Modifiers(PARAM | COVARIANT), makeTypeName(name), Nil, bounds)
 
       // Like makeTypeParam but with contravariance, e.g.
       // ({type L[-A] = ... })#L.
-      def makeTypeParamContra(name: Name) =
+      def makeTypeParamContra(name: Name, bounds: TypeBoundsTree = DefaultBounds) =
         TypeDef(Modifiers(PARAM | CONTRAVARIANT), makeTypeName(name), Nil, bounds)
 
-      // Detects which makeTypeParam* method to call based on name.
-      // Names like +A are covariant, names like -A are contravariant,
-      // all others are invariant.
-      def makeTypeParamFromName(name: Name) =
-        if (name.startsWith("$plus")) {
-          makeTypeParamCo(newTypeName(name.toString.substring(5)))
-        } else if (name.startsWith("$minus")) {
-          makeTypeParamContra(newTypeName(name.toString.substring(6)))
-        } else {
-          makeTypeParam(name)
+      // Given a name, e.g. A or `+A` or `A <: Foo`, build a type
+      // parameter tree using the given name, bounds, variance, etc.
+      def makeTypeParamFromName(name: Name) = {
+        val decoded = NameTransformer.decode(name.toString)
+        val src = s"type _X_[$decoded] = Unit"
+        sp.parse(src) match {
+          case Some(TypeDef(_, _, List(tpe), _)) => tpe
+          case None => unit.error(tree.pos, s"Can't parse param: $name"); null
         }
+      }
 
       // Like makeTypeParam, but can be used recursively in the case of types
       // that are themselves parameterized.
@@ -91,7 +95,7 @@ class KindRewriter(plugin: Plugin, val global: Global)
 
         case ExistentialTypeTree(AppliedTypeTree(Ident(name), ps), _) =>
           val tparams = ps.map(makeComplexTypeParam)
-          TypeDef(Modifiers(PARAM), makeTypeName(name), tparams, bounds)
+          TypeDef(Modifiers(PARAM), makeTypeName(name), tparams, DefaultBounds)
 
         case x =>
           unit.error(x.pos, "Can't parse %s (%s)" format (x, x.getClass.getName))
@@ -143,11 +147,11 @@ class KindRewriter(plugin: Plugin, val global: Global)
 
           case AppliedTypeTree(Ident(name), ps) =>
             val tparams = ps.map(makeComplexTypeParam)
-            TypeDef(Modifiers(PARAM), makeTypeName(name), tparams, bounds)
+            TypeDef(Modifiers(PARAM), makeTypeName(name), tparams, DefaultBounds)
 
           case ExistentialTypeTree(AppliedTypeTree(Ident(name), ps), _) =>
             val tparams = ps.map(makeComplexTypeParam)
-            TypeDef(Modifiers(PARAM), makeTypeName(name), tparams, bounds)
+            TypeDef(Modifiers(PARAM), makeTypeName(name), tparams, DefaultBounds)
 
           case x =>
             unit.error(x.pos, "Can't parse %s (%s)" format (x, x.getClass.getName))
@@ -183,7 +187,7 @@ class KindRewriter(plugin: Plugin, val global: Global)
           case (Ident(name), Some(Right(ContraPlaceholder))) =>
             makeTypeParamContra(name)
           case (Ident(name), Some(Left(tparams))) =>
-            TypeDef(Modifiers(PARAM), makeTypeName(name), tparams, bounds)
+            TypeDef(Modifiers(PARAM), makeTypeName(name), tparams, DefaultBounds)
         }
 
         val args = xyz.map(_._1)
