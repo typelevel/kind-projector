@@ -63,6 +63,9 @@ addCompilerPlugin("org.spire-math" % "kind-projector_2.10" % "0.5.2")
 
 // for scala 2.9.3
 //addCompilerPlugin("org.spire-math" % "kind-projector_2.9.3" % "0.5.2)
+
+// for cross building (won't support 2.9.3, you'd need a manual version mapping)
+addCompilerPlugin("org.spire-math" % "kind-projector"      % "0.5.2" cross CrossVersion.binary)
 ```
 
 That's it!
