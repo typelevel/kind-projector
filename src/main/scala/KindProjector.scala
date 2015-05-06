@@ -126,10 +126,10 @@ class KindRewriter(plugin: Plugin, val global: Global)
               ValDef(Modifiers(0), "_", TypeTree(), EmptyTree),
               TypeDef(
                 Modifiers(0),
-                newTypeName("Λ"),
+                newTypeName("_Λ"),
                 innerTypes,
                 super.transform(subtree)) :: Nil)),
-          newTypeName("Λ"))
+          newTypeName("_Λ"))
 
       // This method handles the explicit type lambda case, e.g.
       // Lambda[(A, B) => Function2[A, Int, B]] case.
