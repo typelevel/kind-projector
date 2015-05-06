@@ -138,6 +138,19 @@ Lambda[A[_] => List[A[Int]]]  // equivalent to: type R[A[_]] = List[A[Int]]
 Lambda[(A, B[_]) => B[A]]     // equivalent to: type R[A, B[_]] = B[A]
 ```
 
+Finally, variance annotations on higher-kinded sub-parameters are
+supported using backticks:
+
+```scala
+Lambda[`x[+_]` => Q[x, List] // equivalent to: type R[x[+_]] = Q[x, List]
+Lambda[`f[-_, +_]` => B[f]   // equivalent to: type R[f[-_, +_]] = B[f]
+```
+
+The function syntax with backtick type parameters is the most
+expressive syntax kind-projector supports. The other syntaxes are
+easier to read at the cost of being unable to express certain
+(hopefully rare) type lambdas.
+
 ### Gotchas
 
 The inline syntax is the tersest and is often preferable when
@@ -170,7 +183,7 @@ Other types which cannot be written correctly using inline syntax are:
  * `Lambda[a => (a, a)]` (repeated use of `a`).
  * `Lambda[(a, b) => Either[b, a]` (reverse order of type params).
  * `Lambda[(a, b) => Function1[a, Option[b]]` (similar to example).
- 
+
 (And of course, you can use `λ[...]` instead of `Lambda[...]` in any
 of these expressions.)
 
