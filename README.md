@@ -3,14 +3,14 @@
 ### Dedication
 
 > "But I don't want to go among mad people," Alice remarked.
-> 
+>
 > "Oh, you can't help that," said the Cat: "we're all mad here. I'm mad.
 > You're mad."
-> 
+>
 > "How do you know I'm mad?" said Alice.
-> 
+>
 > "You must be," said the Cat, "or you wouldn't have come here."
->  
+>
 > --Lewis Carroll, "Alice's Adventures in Wonderland"
 
 ### Overview
@@ -55,20 +55,16 @@ your `build.sbt` file:
 ```scala
 resolvers += "bintray/non" at "http://dl.bintray.com/non/maven"
 
-// for scala 2.11
-addCompilerPlugin("org.spire-math" % "kind-projector_2.11" % "0.5.2")
+addCompilerPlugin("org.spire-math" %% "kind-projector % "0.5.3")
 
-// for scala 2.10
-addCompilerPlugin("org.spire-math" % "kind-projector_2.10" % "0.5.2")
-
-// for scala 2.9.3
-//addCompilerPlugin("org.spire-math" % "kind-projector_2.9.3" % "0.5.2)
-
-// for cross building (won't support 2.9.3, you'd need a manual version mapping)
-addCompilerPlugin("org.spire-math" % "kind-projector"      % "0.5.2" cross CrossVersion.binary)
+// if your project uses multiple Scala versions, use this for cross building
+addCompilerPlugin("org.spire-math" % "kind-projector" % "0.5.3" cross CrossVersion.binary)
 ```
 
 That's it!
+
+(The current version does not support Scala 2.9. To support Scala
+2.9.3, use version 0.5.2.)
 
 ### Inline Syntax
 
@@ -218,34 +214,28 @@ You can use the plugin with `scalac` by specifying it on the
 command-line. For instance:
 
 ```
-scalac -Xplugin:kind-projector_2.10-0.5.0.jar test.scala
+scalac -Xplugin:kind-projector_2.10-0.5.3.jar test.scala
 ```
 
 ### Known issues & errata
 
-It is not currently possible to specify variance for type parameters
-of arguments to a type lambda. Huh???
+When dealing with type parameters that take covariant or contravariant
+type parameters, only the function syntax is supported. Huh???
 
 Here's an example that highlights this issue:
 
 ```scala
 def xyz[F[_[+_]]] = 12345
-trait Q1[A[_], B[_]]
-trait Q2[A[+_], B[+_]]
+trait Q[A[+_], B[+_]]
 
-// we can use kind-projector to adapt Q1 for xyz
-xyz[Q1[?[_], List]]        // ok
-xyz[λ[x[_] => Q1[x, List]] // also ok
+// we can use kind-projector to adapt Q for xyz
+xyz[λ[`x[+_]` => Q[x, List]] // ok
 
-// however, we can't adapt Q2 to xyz due to "deep covariance"
-// we have to use a "raw" type projection
-xyz[({type L[x[+_]] = Q[x, List]})#L]
+// but these don't work (although support for the second form
+// could be added in a future release).
+xyz[Q[?[+_], List]]          // invalid syntax
+xyz[Q[?[`+_`], List]]        // unsupported
 ```
-
-The reason for this shortcoming is syntactic -- there isn't a good way
-to encode this in syntax that the parser will accept. Fortunately this
-possible edge case is pretty obscure (so far, no actual users have
-needed to do this in the wild.)
 
 There have been suggestions for better syntax, like
 `[A, B]Either[B, A]` or `[A, B] => Either[B, A]` instead of
@@ -265,9 +255,10 @@ of `_`, which is why we chose to use `?` instead.
 
 ### Future Work
 
-As of 0.5.0, kind-projector should be able to support any type lambda
-that can be expressed via type projections. If you come across a type
-for which kind-projector lacks a syntax, please report it.
+As of 0.5.3, kind-projector should be able to support any type lambda
+that can be expressed via type projections, at least using the
+function syntax. If you come across a type for which kind-projector
+lacks a syntax, please report it.
 
 ### Disclaimers
 
@@ -287,4 +278,4 @@ All code is available to you under the MIT license, available at
 http://opensource.org/licenses/mit-license.php and also in the COPYING
 file.
 
-Copyright Erik Osheim, 2011-2014.
+Copyright Erik Osheim, 2011-2015.
