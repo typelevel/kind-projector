@@ -3,14 +3,14 @@
 ### Dedication
 
 > "But I don't want to go among mad people," Alice remarked.
-> 
+>
 > "Oh, you can't help that," said the Cat: "we're all mad here. I'm mad.
 > You're mad."
-> 
+>
 > "How do you know I'm mad?" said Alice.
-> 
+>
 > "You must be," said the Cat, "or you wouldn't have come here."
->  
+>
 > --Lewis Carroll, "Alice's Adventures in Wonderland"
 
 ### Overview
@@ -55,17 +55,16 @@ your `build.sbt` file:
 ```scala
 resolvers += "bintray/non" at "http://dl.bintray.com/non/maven"
 
-// for scala 2.11
-addCompilerPlugin("org.spire-math" % "kind-projector_2.11" % "0.5.2")
+addCompilerPlugin("org.spire-math" %% "kind-projector % "0.5.3")
 
-// for scala 2.10
-addCompilerPlugin("org.spire-math" % "kind-projector_2.10" % "0.5.2")
-
-// for scala 2.9.3
-//addCompilerPlugin("org.spire-math" % "kind-projector_2.9.3" % "0.5.2)
+// if your project uses multiple Scala versions, use this for cross building
+addCompilerPlugin("org.spire-math" % "kind-projector" % "0.5.3" cross CrossVersion.binary)
 ```
 
 That's it!
+
+(The current version does not support Scala 2.9. To support Scala
+2.9.3, use version 0.5.2.)
 
 ### Inline Syntax
 
@@ -83,6 +82,7 @@ Here are a few examples:
 Tuple2[?, Double]        // equivalent to: type R[A] = Tuple2[A, Double]
 Either[Int, +?]          // equivalent to: type R[+A] = Either[Int, A]
 Function2[-?, Long, +?]  // equivalent to: type R[-A, +B] = Function2[A, Long, B]
+EitherT[?[_], Int, ?]    // equivalent to: type R[F[_], B] = EitherT[F, A, B]
 ```
 
 As you can see, this syntax works when each type parameter in the type
@@ -138,6 +138,42 @@ Lambda[A[_] => List[A[Int]]]  // equivalent to: type R[A[_]] = List[A[Int]]
 Lambda[(A, B[_]) => B[A]]     // equivalent to: type R[A, B[_]] = B[A]
 ```
 
+### Gotchas
+
+The inline syntax is the tersest and is often preferable when
+possible. However, there are some type lambdas which it cannot
+express.
+
+For example, imagine that we have `trait Functor[F[_]]`.
+
+You might want to write `Functor[Future[List[?]]]`, expecting to get
+something like:
+
+```scala
+type X[a] = Future[List[a]]
+Functor[X]
+```
+
+However, `?` always binds at the tightest level, meaning that
+`List[?]` is interpreted as `type X[a] = List[a]`, and that
+`Future[List[?]]` is invalid.
+
+In these cases you should prefer the lambda syntax, which would be
+written as:
+
+```scala
+Functor[Lambda[a => Future[List[a]]]]
+```
+
+Other types which cannot be written correctly using inline syntax are:
+
+ * `Lambda[a => (a, a)]` (repeated use of `a`).
+ * `Lambda[(a, b) => Either[b, a]` (reverse order of type params).
+ * `Lambda[(a, b) => Function1[a, Option[b]]` (similar to example).
+ 
+(And of course, you can use `λ[...]` instead of `Lambda[...]` in any
+of these expressions.)
+
 ### Under The Hood
 
 This section shows the exact code produced for a few type lambda
@@ -178,10 +214,28 @@ You can use the plugin with `scalac` by specifying it on the
 command-line. For instance:
 
 ```
-scalac -Xplugin:kind-projector_2.10-0.5.0.jar test.scala
+scalac -Xplugin:kind-projector_2.10-0.5.3.jar test.scala
 ```
 
 ### Known issues & errata
+
+When dealing with type parameters that take covariant or contravariant
+type parameters, only the function syntax is supported. Huh???
+
+Here's an example that highlights this issue:
+
+```scala
+def xyz[F[_[+_]]] = 12345
+trait Q[A[+_], B[+_]]
+
+// we can use kind-projector to adapt Q for xyz
+xyz[λ[`x[+_]` => Q[x, List]] // ok
+
+// but these don't work (although support for the second form
+// could be added in a future release).
+xyz[Q[?[+_], List]]          // invalid syntax
+xyz[Q[?[`+_`], List]]        // unsupported
+```
 
 There have been suggestions for better syntax, like
 `[A, B]Either[B, A]` or `[A, B] => Either[B, A]` instead of
@@ -196,11 +250,15 @@ to define a type lambda the way we use `3 + _` to define a
 function. Unfortunately, it's probably too late to modify the meaning
 of `_`, which is why we chose to use `?` instead.
 
+*Update: the Typelevel compiler contains a built-in syntax for
+[type lambdas!](https://github.com/typelevel/scala/wiki/Differences#type-lambdas)*
+
 ### Future Work
 
-As of 0.5.0, kind-projector should be able to support any type lambda
-that can be expressed via type projections. If you come across a type
-for which kind-projector lacks a syntax, please report it.
+As of 0.5.3, kind-projector should be able to support any type lambda
+that can be expressed via type projections, at least using the
+function syntax. If you come across a type for which kind-projector
+lacks a syntax, please report it.
 
 ### Disclaimers
 
@@ -220,4 +278,4 @@ All code is available to you under the MIT license, available at
 http://opensource.org/licenses/mit-license.php and also in the COPYING
 file.
 
-Copyright Erik Osheim, 2011-2014.
+Copyright Erik Osheim, 2011-2015.

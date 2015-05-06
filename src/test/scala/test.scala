@@ -37,6 +37,11 @@ object Test {
   qux[({type L[A[_]] = Unit})#L]
   qux[Lambda[A[_] => Unit]]
 
+  trait Functor[F[_]]
+  trait EitherT[F[_], A, B]
+  qux[Functor[?[_]]]
+  qux[EitherT[?[_], Int, Double]]
+
   // higher higher order
   def vex[T[_[_[_]]]] = ()
   vex[({type L[A[_[_]]] = Unit})#L]
