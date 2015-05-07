@@ -25,6 +25,11 @@ scalacOptions in Test <+= (packageBin in Compile) map {
   pluginJar => "-Xplugin:" + pluginJar
 }
 
+scalacOptions in Test ++= Seq("-Yrangepos")
+
+// Useful for debugging:
+// scalacOptions in Test ++= Seq("-Xprint:typer", "-Xprint-pos")
+
 crossScalaVersions := Seq("2.10.5", "2.11.6", "2.12.0-M1")
 
 seq(bintrayPublishSettings: _*)
