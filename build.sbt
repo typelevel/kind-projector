@@ -2,7 +2,7 @@ name := "kind-projector"
 
 organization := "org.spire-math"
 
-version := "0.5.3"
+version := "0.5.4"
 
 scalaVersion := "2.11.6"
 

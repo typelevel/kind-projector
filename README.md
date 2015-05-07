@@ -55,10 +55,10 @@ your `build.sbt` file:
 ```scala
 resolvers += "bintray/non" at "http://dl.bintray.com/non/maven"
 
-addCompilerPlugin("org.spire-math" %% "kind-projector % "0.5.3")
+addCompilerPlugin("org.spire-math" %% "kind-projector % "0.5.4")
 
 // if your project uses multiple Scala versions, use this for cross building
-addCompilerPlugin("org.spire-math" % "kind-projector" % "0.5.3" cross CrossVersion.binary)
+addCompilerPlugin("org.spire-math" % "kind-projector" % "0.5.4" cross CrossVersion.binary)
 ```
 
 That's it!
@@ -227,7 +227,7 @@ You can use the plugin with `scalac` by specifying it on the
 command-line. For instance:
 
 ```
-scalac -Xplugin:kind-projector_2.10-0.5.3.jar test.scala
+scalac -Xplugin:kind-projector_2.10-0.5.4.jar test.scala
 ```
 
 ### Known issues & errata
