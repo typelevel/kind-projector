@@ -82,7 +82,7 @@ Here are a few examples:
 Tuple2[?, Double]        // equivalent to: type R[A] = Tuple2[A, Double]
 Either[Int, +?]          // equivalent to: type R[+A] = Either[Int, A]
 Function2[-?, Long, +?]  // equivalent to: type R[-A, +B] = Function2[A, Long, B]
-EitherT[?[_], Int, ?]    // equivalent to: type R[F[_], B] = EitherT[F, A, B]
+EitherT[?[_], Int, ?]    // equivalent to: type R[F[_], B] = EitherT[F, Int, B]
 ```
 
 As you can see, this syntax works when each type parameter in the type
