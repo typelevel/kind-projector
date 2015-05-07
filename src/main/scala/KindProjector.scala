@@ -199,9 +199,6 @@ class KindRewriter(plugin: Plugin, val global: Global)
       }
 
       tree match {
-        case Template(parents, self, body) =>
-          treeCopy.Template(tree, parents.map(transform), self, body.map(transform))
-
         // Lambda[A => Either[A, Int]] case.
         case AppliedTypeTree(Ident(TypeLambda1), AppliedTypeTree(_, a :: as) :: Nil) =>
           atPos(tree.pos.makeTransparent)(handleLambda(a, as))
