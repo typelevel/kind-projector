@@ -199,20 +199,17 @@ class KindRewriter(plugin: Plugin, val global: Global)
       }
 
       tree match {
-        case Template(parents, self, body) =>
-          Template(parents.map(transform), self, body.map(transform))
-
         // Lambda[A => Either[A, Int]] case.
         case AppliedTypeTree(Ident(TypeLambda1), AppliedTypeTree(_, a :: as) :: Nil) =>
-          handleLambda(a, as)
+          atPos(tree.pos.makeTransparent)(handleLambda(a, as))
 
         // λ[A => Either[A, Int]] case.
         case AppliedTypeTree(Ident(TypeLambda2), AppliedTypeTree(_, a :: as) :: Nil) =>
-          handleLambda(a, as)
+          atPos(tree.pos.makeTransparent)(handleLambda(a, as)) 
 
         // Either[?, Int] case (if no ? present this is a noop)
         case AppliedTypeTree(t, as) =>
-          handlePlaceholders(t, as)
+          atPos(tree.pos.makeTransparent)(handlePlaceholders(t, as))
 
         // Otherwise, carry on as normal.
         case _ =>

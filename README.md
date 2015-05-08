@@ -55,10 +55,10 @@ your `build.sbt` file:
 ```scala
 resolvers += "bintray/non" at "http://dl.bintray.com/non/maven"
 
-addCompilerPlugin("org.spire-math" %% "kind-projector % "0.5.3")
+addCompilerPlugin("org.spire-math" %% "kind-projector % "0.5.4")
 
 // if your project uses multiple Scala versions, use this for cross building
-addCompilerPlugin("org.spire-math" % "kind-projector" % "0.5.3" cross CrossVersion.binary)
+addCompilerPlugin("org.spire-math" % "kind-projector" % "0.5.4" cross CrossVersion.binary)
 ```
 
 That's it!
@@ -82,7 +82,7 @@ Here are a few examples:
 Tuple2[?, Double]        // equivalent to: type R[A] = Tuple2[A, Double]
 Either[Int, +?]          // equivalent to: type R[+A] = Either[Int, A]
 Function2[-?, Long, +?]  // equivalent to: type R[-A, +B] = Function2[A, Long, B]
-EitherT[?[_], Int, ?]    // equivalent to: type R[F[_], B] = EitherT[F, A, B]
+EitherT[?[_], Int, ?]    // equivalent to: type R[F[_], B] = EitherT[F, Int, B]
 ```
 
 As you can see, this syntax works when each type parameter in the type
@@ -138,6 +138,19 @@ Lambda[A[_] => List[A[Int]]]  // equivalent to: type R[A[_]] = List[A[Int]]
 Lambda[(A, B[_]) => B[A]]     // equivalent to: type R[A, B[_]] = B[A]
 ```
 
+Finally, variance annotations on higher-kinded sub-parameters are
+supported using backticks:
+
+```scala
+Lambda[`x[+_]` => Q[x, List] // equivalent to: type R[x[+_]] = Q[x, List]
+Lambda[`f[-_, +_]` => B[f]   // equivalent to: type R[f[-_, +_]] = B[f]
+```
+
+The function syntax with backtick type parameters is the most
+expressive syntax kind-projector supports. The other syntaxes are
+easier to read at the cost of being unable to express certain
+(hopefully rare) type lambdas.
+
 ### Gotchas
 
 The inline syntax is the tersest and is often preferable when
@@ -170,7 +183,7 @@ Other types which cannot be written correctly using inline syntax are:
  * `Lambda[a => (a, a)]` (repeated use of `a`).
  * `Lambda[(a, b) => Either[b, a]` (reverse order of type params).
  * `Lambda[(a, b) => Function1[a, Option[b]]` (similar to example).
- 
+
 (And of course, you can use `λ[...]` instead of `Lambda[...]` in any
 of these expressions.)
 
@@ -214,7 +227,7 @@ You can use the plugin with `scalac` by specifying it on the
 command-line. For instance:
 
 ```
-scalac -Xplugin:kind-projector_2.10-0.5.3.jar test.scala
+scalac -Xplugin:kind-projector_2.10-0.5.4.jar test.scala
 ```
 
 ### Known issues & errata
