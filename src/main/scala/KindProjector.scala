@@ -30,6 +30,9 @@ class KindRewriter(plugin: Plugin, val global: Global)
   val runsAfter = "parser" :: Nil
   val phaseName = "kind-projector"
 
+  lazy val genAsciiNames: Boolean =
+    System.getProperty("kp:genAsciiNames") == "true"
+
   def newTransformer(unit: CompilationUnit) = new MyTransformer(unit)
 
   class MyTransformer(unit: CompilationUnit) extends TypingTransformer(unit) {
@@ -41,37 +44,66 @@ class KindRewriter(plugin: Plugin, val global: Global)
     val CoPlaceholder = newTypeName("$plus$qmark")
     val ContraPlaceholder = newTypeName("$minus$qmark")
 
+    // the name to use for the type lambda itself.
+    // e.g. the L in ({ type L[x] = Either[x, Int] })#L.
+    val LambdaName = newTypeName(if (genAsciiNames) "L_kp" else "Λ$")
+
     // these will be used for matching but aren't reserved
     val Plus = newTypeName("$plus")
     val Minus = newTypeName("$minus")
 
-    def rssi(b: String, c: String) =
-      Select(Select(Ident("_root_"), b), newTypeName(c))
+    /**
+     * Produce type lambda param names.
+     *
+     * If genAsciiNames is set, the legacy names (X_kp0, X_kp1, etc)
+     * will be used.
+     *
+     * Otherwise:
+     *
+     * The first parameter (i=0) will be α, the second β, and so on.
+     * After producing ω (for i=24), the letters wrap back around with
+     * a number appended, e.g. α1, β1, and so on.
+     */
+    def newParamName(i: Int): TypeName = {
+      require(i >= 0)
+      if (genAsciiNames) {
+        newTypeName("X_kp%d" format i)
+      } else {
+        val j = i % 25
+        val k = i / 25
+        val c = ('α' + j).toChar
+        val s = if (k == 0) s"$c" else s"$c$k"
+        newTypeName(s)
+      }
+    }
 
-    val NothingLower = rssi("scala", "Nothing")
-    val AnyUpper = rssi("scala", "Any")
+    // Define some names (and bounds) that will come in handy.
+    val NothingLower = gen.rootScalaDot(tpnme.Nothing)
+    val AnyUpper = gen.rootScalaDot(tpnme.Any)
+    val AnyRefBase = gen.rootScalaDot(tpnme.AnyRef)
     val DefaultBounds = TypeBoundsTree(NothingLower, AnyUpper)
 
+    // Handy way to make a TypeName from a Name.
+    def makeTypeName(name: Name): TypeName =
+      newTypeName(name.toString)
+
+    // We use this to create type parameters inside our type project, e.g.
+    // the A in: ({type L[A] = (A, Int) => A})#L.
+    def makeTypeParam(name: Name, bounds: TypeBoundsTree = DefaultBounds): TypeDef =
+      TypeDef(Modifiers(PARAM), makeTypeName(name), Nil, bounds)
+
+    // Like makeTypeParam but with covariance, e.g.
+    // ({type L[+A] = ... })#L.
+    def makeTypeParamCo(name: Name, bounds: TypeBoundsTree = DefaultBounds): TypeDef =
+      TypeDef(Modifiers(PARAM | COVARIANT), makeTypeName(name), Nil, bounds)
+
+    // Like makeTypeParam but with contravariance, e.g.
+    // ({type L[-A] = ... })#L.
+    def makeTypeParamContra(name: Name, bounds: TypeBoundsTree = DefaultBounds): TypeDef =
+      TypeDef(Modifiers(PARAM | CONTRAVARIANT), makeTypeName(name), Nil, bounds)
+
+    // The transform method -- this is where the magic happens.
     override def transform(tree: Tree): Tree = {
-
-      // Handy way to make a TypeName from a Name.
-      def makeTypeName(name: Name) =
-        newTypeName(name.toString)
-
-      // We use this to create type parameters inside our type project, e.g.
-      // the A in: ({type L[A] = (A, Int) => A})#L.
-      def makeTypeParam(name: Name, bounds: TypeBoundsTree = DefaultBounds) =
-        TypeDef(Modifiers(PARAM), makeTypeName(name), Nil, bounds)
-
-      // Like makeTypeParam but with covariance, e.g.
-      // ({type L[+A] = ... })#L.
-      def makeTypeParamCo(name: Name, bounds: TypeBoundsTree = DefaultBounds) =
-        TypeDef(Modifiers(PARAM | COVARIANT), makeTypeName(name), Nil, bounds)
-
-      // Like makeTypeParam but with contravariance, e.g.
-      // ({type L[-A] = ... })#L.
-      def makeTypeParamContra(name: Name, bounds: TypeBoundsTree = DefaultBounds) =
-        TypeDef(Modifiers(PARAM | CONTRAVARIANT), makeTypeName(name), Nil, bounds)
 
       // Given a name, e.g. A or `+A` or `A <: Foo`, build a type
       // parameter tree using the given name, bounds, variance, etc.
@@ -80,7 +112,7 @@ class KindRewriter(plugin: Plugin, val global: Global)
         val src = s"type _X_[$decoded] = Unit"
         sp.parse(src) match {
           case Some(TypeDef(_, _, List(tpe), _)) => tpe
-          case None => unit.error(tree.pos, s"Can't parse param: $name"); null
+          case None => reporter.error(tree.pos, s"Can't parse param: $name"); null
         }
       }
 
@@ -98,7 +130,7 @@ class KindRewriter(plugin: Plugin, val global: Global)
           TypeDef(Modifiers(PARAM), makeTypeName(name), tparams, DefaultBounds)
 
         case x =>
-          unit.error(x.pos, "Can't parse %s (%s)" format (x, x.getClass.getName))
+          reporter.error(x.pos, "Can't parse %s (%s)" format (x, x.getClass.getName))
           null.asInstanceOf[TypeDef]
       }
 
@@ -112,24 +144,21 @@ class KindRewriter(plugin: Plugin, val global: Global)
           case h :: t => parseLambda(h, t, a :: stack)
         }
 
-      // TODO: If we drop 2.9 support, we should use TermName("_")
-      // instead of "_".
-
       // Builds the horrendous type projection tree. To remind the reader,
       // given List("A", "B") and <(A, Int, B)> we are generating a tree for
-      // ({type L[A, B] = (A, Int, B)})#L.
+      // ({ type L[A, B] = (A, Int, B) })#L.
       def makeTypeProjection(innerTypes: List[TypeDef], subtree: Tree) =
         SelectFromTypeTree(
           CompoundTypeTree(
             Template(
-              rssi("scala", "AnyRef") :: Nil,
-              ValDef(Modifiers(0), "_", TypeTree(), EmptyTree),
+              AnyRefBase :: Nil,
+              ValDef(NoMods, nme.WILDCARD, TypeTree(), EmptyTree),
               TypeDef(
-                Modifiers(0),
-                newTypeName("_Λ"),
+                NoMods,
+                LambdaName,
                 innerTypes,
                 super.transform(subtree)) :: Nil)),
-          newTypeName("_Λ"))
+          LambdaName)
 
       // This method handles the explicit type lambda case, e.g.
       // Lambda[(A, B) => Function2[A, Int, B]] case.
@@ -154,7 +183,7 @@ class KindRewriter(plugin: Plugin, val global: Global)
             TypeDef(Modifiers(PARAM), makeTypeName(name), tparams, DefaultBounds)
 
           case x =>
-            unit.error(x.pos, "Can't parse %s (%s)" format (x, x.getClass.getName))
+            reporter.error(x.pos, "Can't parse %s (%s)" format (x, x.getClass.getName))
             null.asInstanceOf[TypeDef]
         }
         makeTypeProjection(innerTypes, subtree)
@@ -167,13 +196,13 @@ class KindRewriter(plugin: Plugin, val global: Global)
         // individual identifiers for them.
         val xyz = as.zipWithIndex.map {
           case (Ident(Placeholder), i) =>
-            (Ident(newTypeName("α%d" format i)), Some(Right(Placeholder)))
+            (Ident(newParamName(i)), Some(Right(Placeholder)))
           case (Ident(CoPlaceholder), i) =>
-            (Ident(newTypeName("α%d" format i)), Some(Right(CoPlaceholder)))
+            (Ident(newParamName(i)), Some(Right(CoPlaceholder)))
           case (Ident(ContraPlaceholder), i) =>
-            (Ident(newTypeName("α%d" format i)), Some(Right(ContraPlaceholder)))
+            (Ident(newParamName(i)), Some(Right(ContraPlaceholder)))
           case (ExistentialTypeTree(AppliedTypeTree(Ident(Placeholder), ps), _), i) =>
-            (Ident(newTypeName("α%d" format i)), Some(Left(ps.map(makeComplexTypeParam))))
+            (Ident(newParamName(i)), Some(Left(ps.map(makeComplexTypeParam))))
           case (a, i) =>
             (super.transform(a), None)
         }
@@ -205,7 +234,7 @@ class KindRewriter(plugin: Plugin, val global: Global)
 
         // λ[A => Either[A, Int]] case.
         case AppliedTypeTree(Ident(TypeLambda2), AppliedTypeTree(_, a :: as) :: Nil) =>
-          atPos(tree.pos.makeTransparent)(handleLambda(a, as)) 
+          atPos(tree.pos.makeTransparent)(handleLambda(a, as))
 
         // Either[?, Int] case (if no ? present this is a noop)
         case AppliedTypeTree(t, as) =>
