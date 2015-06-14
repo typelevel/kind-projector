@@ -41,8 +41,8 @@ avoid defining the following identifiers:
 
  1. `Lambda` and `λ`
  2. `?`, `+?`, and `-?`
- 4. `L_kp`
- 5. `X_kp0`, `X_kp1`, ...
+ 4. `Λ$`
+ 5. `α`, `β`, ...
 
 If you find yourself using lots of type lambdas, and you don't mind
 reserving those identifiers, then this compiler plugin is for you!
@@ -194,23 +194,27 @@ expressions.
 
 ```scala
 Either[Int, ?]
-({type L_kp[X_kp1] = (Int, X_kp1)})#L_kp
+({type Λ$[β] = (Int, β)})#Λ$
 
 Function2[-?, String, +?]
-({type L_kp[-X_kp0, +X_kp2] = Function2[X_kp0, String, X_kp2]})#L_kp
+({type Λ$[-α, +γ] = Function2[α, String, γ]})#Λ$
 
 Lambda[A => (A, A)]
-({type L_kp[A] = (A, A)})#L_kp
+({type Λ$[A] = (A, A)})#Λ$
 
 Lambda[(`+A`, B) => Either[A, Option[B]]]
-({type L_kp[+A, B] = Either[A, Option[B]]})#L_kp
+({type Λ$[+A, B] = Either[A, Option[B]]})#Λ$
 
 Lambda[(A, B[_]) => B[A]]
-({type L_kp[A, B[_]] = B[A]})#L_kp
+({type Λ$[A, B[_]] = B[A]})#Λ$
 ```
 
-As you can see, names like `L_kp` and `X_kp0` are forbidden because
-they might conflict with names the plugin generates.
+As you can see, names like `Λ$` and `α` are forbidden because they
+might conflict with names the plugin generates.
+
+If you dislike these unicode names, pass `-Dkp:genAsciiNames=true` to
+scalac to use munged ASCII names. This will use `L_kp` in place of
+`Λ$`, `X_kp0` in place of `α`, and so on.
 
 ### Building the plugin
 
