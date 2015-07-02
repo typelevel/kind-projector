@@ -194,7 +194,7 @@ expressions.
 
 ```scala
 Either[Int, ?]
-({type Λ$[β] = (Int, β)})#Λ$
+({type Λ$[β] = Either[Int, β]})#Λ$
 
 Function2[-?, String, +?]
 ({type Λ$[-α, +γ] = Function2[α, String, γ]})#Λ$
