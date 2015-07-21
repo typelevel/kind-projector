@@ -70,7 +70,7 @@ releaseProcess := Seq[ReleaseStep](
   setReleaseVersion,
   commitReleaseVersion,
   tagRelease,
-  ReleaseStep(action = Command.process("publishSigned", _)),
+  publishArtifacts,
   setNextVersion,
   commitNextVersion,
   ReleaseStep(action = Command.process("sonatypeReleaseAll", _)),
