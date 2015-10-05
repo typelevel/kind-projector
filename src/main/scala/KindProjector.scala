@@ -107,7 +107,7 @@ class KindRewriter(plugin: Plugin, val global: Global)
 
       // Given a name, e.g. A or `+A` or `A <: Foo`, build a type
       // parameter tree using the given name, bounds, variance, etc.
-      def makeTypeParamFromName(name: Name) = {
+      def makeTypeParamFromName(name: Name): TypeDef = {
         val decoded = NameTransformer.decode(name.toString)
         val src = s"type _X_[$decoded] = Unit"
         sp.parse(src) match {
@@ -147,7 +147,7 @@ class KindRewriter(plugin: Plugin, val global: Global)
       // Builds the horrendous type projection tree. To remind the reader,
       // given List("A", "B") and <(A, Int, B)> we are generating a tree for
       // ({ type L[A, B] = (A, Int, B) })#L.
-      def makeTypeProjection(innerTypes: List[TypeDef], subtree: Tree) =
+      def makeTypeProjection(innerTypes: List[TypeDef], subtree: Tree): Tree =
         SelectFromTypeTree(
           CompoundTypeTree(
             Template(
@@ -162,7 +162,7 @@ class KindRewriter(plugin: Plugin, val global: Global)
 
       // This method handles the explicit type lambda case, e.g.
       // Lambda[(A, B) => Function2[A, Int, B]] case.
-      def handleLambda(a: Tree, as: List[Tree]) = {
+      def handleLambda(a: Tree, as: List[Tree]): Tree = {
         val (args, subtree) = parseLambda(a, as, Nil)
         val innerTypes = args.map {
           case Ident(name) =>
@@ -227,14 +227,62 @@ class KindRewriter(plugin: Plugin, val global: Global)
         else makeTypeProjection(innerTypes, AppliedTypeTree(t, args))
       }
 
+      // confirm that the type argument to a Lambda[...] expression is
+      // valid. valid means that it is scala.FunctionN for N >= 1.
+      //
+      // note that it is possible to confuse the plugin using imports.
+      // for example:
+      //
+      //    import scala.{Function1 => Junction1}
+      //    def sink[F[_]] = ()
+      //
+      //    sink[Lambda[A => Either[Int, A]]] // ok
+      //    sink[Lambda[Function1[A, Either[Int, A]]]] // also ok
+      //    sink[Lambda[Junction1[A, Either[Int, A]]]] // fails
+      //
+      // however, since the plugin encourages users to use syntactic
+      // functions (i.e. with the => syntax) this isn't that big a
+      // deal.
+      //
+      // on 2.11+ we could use quasiquotes' implementation to check
+      // this via:
+      //
+      //    internal.reificationSupport.SyntacticFunctionType.unapply
+      //
+      // but for now let's just do this.
+      def validateLambda(pos: Position, target: Tree, a: Tree, as: List[Tree]): Tree = {
+        def validateArgs: Tree =
+          if (as.isEmpty) {
+            reporter.error(tree.pos, s"Function0 cannot be used in type lambdas"); target
+          } else {
+            atPos(tree.pos.makeTransparent)(handleLambda(a, as))
+          }
+        target match {
+          case Ident(n) if n.startsWith("Function") =>
+            validateArgs
+          case Select(Ident(nme.scala_), n) if n.startsWith("Function") =>
+            validateArgs
+          case Select(Select(Ident(nme.ROOTPKG), nme.scala_), n) if n.startsWith("Function") =>
+            validateArgs
+          case _ =>
+            reporter.error(tree.pos, s"Lambda requires a literal function (found $target)"); target
+        }
+      }
+
+      // this is where it all starts.
+      //
+      // given a tree, see if it could possibly be a type lambda
+      // (either placeholder syntax or lambda syntax). if so, handle
+      // it, and if not, transform it in the normal way.
       tree match {
+
         // Lambda[A => Either[A, Int]] case.
-        case AppliedTypeTree(Ident(TypeLambda1), AppliedTypeTree(_, a :: as) :: Nil) =>
-          atPos(tree.pos.makeTransparent)(handleLambda(a, as))
+        case AppliedTypeTree(Ident(TypeLambda1), AppliedTypeTree(target, a :: as) :: Nil) =>
+          validateLambda(tree.pos, target, a, as)
 
         // λ[A => Either[A, Int]] case.
-        case AppliedTypeTree(Ident(TypeLambda2), AppliedTypeTree(_, a :: as) :: Nil) =>
-          atPos(tree.pos.makeTransparent)(handleLambda(a, as))
+        case AppliedTypeTree(Ident(TypeLambda2), AppliedTypeTree(target, a :: as) :: Nil) =>
+          validateLambda(tree.pos, target, a, as)
 
         // Either[?, Int] case (if no ? present this is a noop)
         case AppliedTypeTree(t, as) =>
