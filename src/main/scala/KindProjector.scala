@@ -240,6 +240,16 @@ class KindRewriter(plugin: Plugin, val global: Global)
       //    sink[Lambda[Function1[A, Either[Int, A]]]] // also ok
       //    sink[Lambda[Junction1[A, Either[Int, A]]]] // fails
       //
+      // however, since the plugin encourages users to use syntactic
+      // functions (i.e. with the => syntax) this isn't that big a
+      // deal.
+      //
+      // on 2.11+ we could use quasiquotes' implementation to check
+      // this via:
+      //
+      //    internal.reificationSupport.SyntacticFunctionType.unapply
+      //
+      // but for now let's just do this.
       def validateLambda(pos: Position, target: Tree, a: Tree, as: List[Tree]): Tree = {
         def validateArgs: Tree =
           if (as.isEmpty) {
