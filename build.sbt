@@ -6,7 +6,7 @@ licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
 homepage := Some(url("http://github.com/non/kind-projector"))
 
 scalaVersion := "2.11.7"
-crossScalaVersions := Seq("2.10.5", "2.11.7", "2.12.0-M2")
+crossScalaVersions := Seq("2.10.5", "2.11.7", "2.12.0-M3")
 
 libraryDependencies <++= (scalaVersion) {
   v => Seq("org.scala-lang" % "scala-compiler" % v)
