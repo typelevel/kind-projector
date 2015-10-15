@@ -1,29 +1,18 @@
 package hmm
 
-import shapeless._
-
 class TC[A]
 
 object TC {
-
-  def apply[A](implicit ev: TC[A]) =
-    ev
-
-  implicit val IntTC: TC[Int] =
-    new TC[Int]
-
-  implicit def deriveHNil: TC[HNil] =
-    new TC[HNil]
-
-  implicit def deriveHCons[H, T <: HList](implicit H: TC[H], T: TC[T]): TC[H :: T] =
-    new TC[H :: T]
-
-  // not required for this example
-  implicit def deriveInstance[F, G](implicit gen: Generic.Aux[F, G], G: TC[G]): TC[F] =
-    new TC[F]
+  def apply[A]: Unit = ()
 }
 
 object test {
+
+  sealed trait HList extends Product with Serializable
+  case class ::[+H, +T <: HList](head : H, tail : T) extends HList
+  sealed trait HNil extends HList
+  case object HNil extends HNil
+
   TC[Int :: Int :: Int :: Int :: Int :: Int :: Int :: Int ::
    Int :: Int :: Int :: Int :: Int :: Int :: Int :: Int ::
    Int :: Int :: Int :: Int :: Int :: Int :: Int :: Int :: HNil]
