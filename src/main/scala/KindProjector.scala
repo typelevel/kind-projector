@@ -13,6 +13,7 @@ import nsc.ast.TreeDSL
 import nsc.typechecker
 
 import scala.reflect.NameTransformer
+import scala.collection.mutable
 
 class KindProjector(val global: Global) extends Plugin {
   val name = "kind-projector"
@@ -30,14 +31,20 @@ class KindRewriter(plugin: Plugin, val global: Global)
   val runsAfter = "parser" :: Nil
   val phaseName = "kind-projector"
 
-  lazy val genAsciiNames: Boolean =
+  lazy val useAsciiNames: Boolean =
     System.getProperty("kp:genAsciiNames") == "true"
 
-  def newTransformer(unit: CompilationUnit) = new MyTransformer(unit)
+  def newTransformer(unit: CompilationUnit): MyTransformer =
+    new MyTransformer(unit)
 
   class MyTransformer(unit: CompilationUnit) extends TypingTransformer(unit) {
 
-    // reserve some names
+    // we use this to avoid expensively recomputing the same tree
+    // multiple times. this was introduced to fix a situation where
+    // using kp with hlists was too costly.
+    val treeCache = mutable.Map.empty[Tree, Tree]
+
+    // Reserve some names
     val TypeLambda1 = newTypeName("Lambda")
     val TypeLambda2 = newTypeName("λ")
     val Placeholder = newTypeName("$qmark")
@@ -46,7 +53,7 @@ class KindRewriter(plugin: Plugin, val global: Global)
 
     // the name to use for the type lambda itself.
     // e.g. the L in ({ type L[x] = Either[x, Int] })#L.
-    val LambdaName = newTypeName(if (genAsciiNames) "L_kp" else "Λ$")
+    val LambdaName = newTypeName(if (useAsciiNames) "L_kp" else "Λ$")
 
     // these will be used for matching but aren't reserved
     val Plus = newTypeName("$plus")
@@ -55,7 +62,7 @@ class KindRewriter(plugin: Plugin, val global: Global)
     /**
      * Produce type lambda param names.
      *
-     * If genAsciiNames is set, the legacy names (X_kp0, X_kp1, etc)
+     * If useAsciiNames is set, the legacy names (X_kp0, X_kp1, etc)
      * will be used.
      *
      * Otherwise:
@@ -66,7 +73,7 @@ class KindRewriter(plugin: Plugin, val global: Global)
      */
     def newParamName(i: Int): TypeName = {
       require(i >= 0)
-      if (genAsciiNames) {
+      if (useAsciiNames) {
         newTypeName("X_kp%d" format i)
       } else {
         val j = i % 25
@@ -269,12 +276,19 @@ class KindRewriter(plugin: Plugin, val global: Global)
         }
       }
 
+      // if we've already handled this tree, let's just use the
+      // previous result and be done now!
+      treeCache.get(tree) match {
+        case Some(result) => return result
+        case None => ()
+      }
+
       // this is where it all starts.
       //
       // given a tree, see if it could possibly be a type lambda
       // (either placeholder syntax or lambda syntax). if so, handle
       // it, and if not, transform it in the normal way.
-      tree match {
+      val result = tree match {
 
         // Lambda[A => Either[A, Int]] case.
         case AppliedTypeTree(Ident(TypeLambda1), AppliedTypeTree(target, a :: as) :: Nil) =>
@@ -292,6 +306,10 @@ class KindRewriter(plugin: Plugin, val global: Global)
         case _ =>
           super.transform(tree)
       }
+
+      // cache the result so we don't have to recompute it again later.
+      treeCache(tree) = result
+      result
     }
   }
 }
