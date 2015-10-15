@@ -8,9 +8,11 @@ homepage := Some(url("http://github.com/non/kind-projector"))
 scalaVersion := "2.11.7"
 crossScalaVersions := Seq("2.10.5", "2.11.7", "2.12.0-M3")
 
-libraryDependencies <++= (scalaVersion) {
-  v => Seq("org.scala-lang" % "scala-compiler" % v)
+libraryDependencies <++= (scalaVersion) { v =>
+  Seq("org.scala-lang" % "scala-compiler" % v)
 }
+
+libraryDependencies += "com.chuusai"  %% "shapeless" % "2.2.2" % "test"
 
 // scalac options
 
