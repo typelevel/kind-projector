@@ -57,7 +57,7 @@ your `build.sbt` file:
 ```scala
 resolvers += Resolver.sonatypeRepo("releases")
 
-addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.7.1)
+addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.7.1")
 
 // if your project uses multiple Scala versions, use this for cross building
 addCompilerPlugin("org.spire-math" % "kind-projector" % "0.7.1" cross CrossVersion.binary)
