@@ -80,7 +80,7 @@ class KindRewriter(plugin: Plugin, val global: Global)
      *
      * The first parameter (i=0) will be α$, the second β$, and so on.
      * After producing ω$ (for i=24), the letters wrap back around with
-     * a number appended, e.g. α$1$, β$1$, and so on.
+     * a number appended.
      */
     def newParamName(i: Int): TypeName = {
       require(i >= 0)
