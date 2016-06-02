@@ -59,29 +59,42 @@ class KindRewriter(plugin: Plugin, val global: Global)
     val Plus = newTypeName("$plus")
     val Minus = newTypeName("$minus")
 
+    private var cnt = -1 // So we actually start naming from 0
+
+    @inline
+    private def freshName(s: String) = {
+      cnt += 1
+      s + cnt + "$"
+    }
+
     /**
      * Produce type lambda param names.
      *
-     * If useAsciiNames is set, the legacy names (X_kp0, X_kp1, etc)
+     * The name is always appended with a unique number for the compilation
+     * unit to prevent shadowing of names in a nested context.
+     *
+     * If useAsciiNames is set, the legacy names (X_kp0$, X_kp1$, etc)
      * will be used.
      *
      * Otherwise:
      *
-     * The first parameter (i=0) will be α, the second β, and so on.
-     * After producing ω (for i=24), the letters wrap back around with
-     * a number appended, e.g. α1, β1, and so on.
+     * The first parameter (i=0) will be α$, the second β$, and so on.
+     * After producing ω$ (for i=24), the letters wrap back around with
+     * a number appended, e.g. α$1$, β$1$, and so on.
      */
     def newParamName(i: Int): TypeName = {
       require(i >= 0)
-      if (useAsciiNames) {
-        newTypeName("X_kp%d" format i)
-      } else {
-        val j = i % 25
-        val k = i / 25
-        val c = ('α' + j).toChar
-        val s = if (k == 0) s"$c" else s"$c$k"
-        newTypeName(s)
+      val name = {
+        if (useAsciiNames) {
+          "X_kp%d".format(i) + "$"
+        } else {
+          val j = i % 25
+          val k = i / 25
+          val c = ('α' + j).toChar
+          if (k == 0) s"$c$$" else s"$c$$$k$$"
+        }
       }
+      newTypeName(freshName(name))
     }
 
     // Define some names (and bounds) that will come in handy.

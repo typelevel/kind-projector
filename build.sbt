@@ -11,6 +11,8 @@ libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
 // scalac options
 
 scalacOptions ++= Seq(
+  "-Xfatal-warnings",
+  "-Xlint",
   "-feature",
   "-language:higherKinds",
   "-deprecation",
