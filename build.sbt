@@ -3,7 +3,7 @@ organization := "org.spire-math"
 licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
 homepage := Some(url("http://github.com/non/kind-projector"))
 
-scalaVersion := "2.11.7"
+scalaVersion := "2.11.8"
 crossScalaVersions := Seq("2.10.6", "2.11.8", "2.12.0-M5")
 
 libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
