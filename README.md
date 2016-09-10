@@ -273,9 +273,6 @@ to define a type lambda the way we use `3 + _` to define a
 function. Unfortunately, it's probably too late to modify the meaning
 of `_`, which is why we chose to use `?` instead.
 
-*Update: the Typelevel compiler contains a built-in syntax for
-[type lambdas!](https://github.com/typelevel/scala/wiki/Differences#type-lambdas)*
-
 ### Future Work
 
 As of 0.5.3, kind-projector should be able to support any type lambda
