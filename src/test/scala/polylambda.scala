@@ -21,6 +21,21 @@ object PolyLambdas {
 
   val kf4 = λ[Option ~>> Option].dingo(_ flatMap (_ => None))
 
+  val kf5 = λ[Map[?, Int] ~> Map[?, Long]](_ mapValues (_.toLong))
+
+  val kf6 = λ[ToSelf[Map[?, Int]]](_ mapValues (_ * 2))
+
+  implicit class FGOps[F[_], A](x: F[A]) {
+    def ntMap[G[_]](kf: F ~> G): G[A] = kf(x)
+  }
+
+  // Scala won't infer the unary type constructor alias from a
+  // tuple. I'm not sure how it even could, so we'll let it slide.
+  type PairWithInt[A] = (A, Int)
+  def mkPair[A](x: A, y: Int): PairWithInt[A] = x -> y
+  val pairMap = λ[ToSelf[PairWithInt]] { case (k, v) => (k, v * 2) }
+  val tupleTakeFirst = λ[λ[A => (A, Int)] ~> List](x => List(x._1))
+
   def main(args: Array[String]): Unit = {
     assert(kf1(None) == Vector())
     assert(kf1(Some("a")) == Vector("a"))
@@ -28,5 +43,15 @@ object PolyLambdas {
     assert(kf2(Vector(5)) == Some(5))
     assert(kf3(Vector(1, 2)) == Vector(2, 1))
     assert(kf4.dingo(Some(5)) == None)
+    assert(kf5(Map("a" -> 5)) == Map("a" -> 5))
+    assert(kf6(Map("a" -> 5)) == Map("a" -> 10))
+
+    assert((mkPair("a", 1) ntMap pairMap) == ("a" -> 2))
+    assert((mkPair(Some(true), 1) ntMap pairMap) == (Some(true) -> 2))
+
+    assert(mkPair('a', 1).ntMap(tupleTakeFirst) == List('a'))
+    // flatten works, whereas it would be a static error in the
+    // line above. That's pretty poly!
+    assert(mkPair(Some(true), 1).ntMap(tupleTakeFirst).flatten == List(true))
   }
 }
