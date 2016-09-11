@@ -6,6 +6,7 @@ trait ~>[-F[_], +G[_]] {
 trait ~>>[-F[_], +G[_]] {
   def dingo[B](x: F[B]): G[B]
 }
+final case class Const[A, B](getConst: A)
 
 object PolyLambdas {
   type ToSelf[F[_]] = F ~> F
@@ -35,6 +36,14 @@ object PolyLambdas {
   def mkPair[A](x: A, y: Int): PairWithInt[A] = x -> y
   val pairMap = λ[ToSelf[PairWithInt]] { case (k, v) => (k, v * 2) }
   val tupleTakeFirst = λ[λ[A => (A, Int)] ~> List](x => List(x._1))
+
+  // All these formulations should be equivalent.
+  def const1[A]                              = λ[ToSelf[Const[A, ?]]](x => x)
+  def const2[A] : ToSelf[Const[A, ?]]        = λ[Const[A, ?] ~> Const[A, ?]](x => x)
+  def const3[A] : Const[A, ?] ~> Const[A, ?] = λ[ToSelf[Const[A, ?]]](x => x)
+  def const4[A]                              = λ[Const[A, ?] ~> Const[A, ?]](x => x)
+  def const5[A] : ToSelf[Const[A, ?]]        = λ[ToSelf[λ[B => Const[A, B]]]](x => x)
+  def const6[A] : Const[A, ?] ~> Const[A, ?] = λ[ToSelf[λ[B => Const[A, B]]]](x => x)
 
   def main(args: Array[String]): Unit = {
     assert(kf1(None) == Vector())

@@ -22,7 +22,17 @@ scalacOptions ++= Seq(
   "-unchecked"
 )
 
-scalacOptions in console in Compile += "-Xplugin:" + (packageBin in Compile).value
+List(Compile, Test) flatMap { config =>
+  Seq(
+    initialCommands in console in config := "import d_m._",
+    // Notice this is :=, not += - all the warning/lint options are simply
+    // impediments in the repl.
+    scalacOptions in console in config := Seq(
+      "-language:_",
+      "-Xplugin:" + (packageBin in Compile).value
+    )
+  )
+}
 
 scalacOptions in Test += "-Xplugin:" + (packageBin in Compile).value
 
