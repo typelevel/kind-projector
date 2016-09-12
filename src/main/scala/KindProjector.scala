@@ -37,7 +37,8 @@ class KindRewriter(plugin: Plugin, val global: Global)
   def newTransformer(unit: CompilationUnit): MyTransformer =
     new MyTransformer(unit)
 
-  class MyTransformer(unit: CompilationUnit) extends TypingTransformer(unit) {
+  class MyTransformer(unit: CompilationUnit) extends TypingTransformer(unit) with Extractors {
+    val global: KindRewriter.this.global.type = KindRewriter.this.global
 
     // we use this to avoid expensively recomputing the same tree
     // multiple times. this was introduced to fix a situation where
@@ -51,6 +52,9 @@ class KindRewriter(plugin: Plugin, val global: Global)
     val CoPlaceholder = newTypeName("$plus$qmark")
     val ContraPlaceholder = newTypeName("$minus$qmark")
 
+    val TermLambda1 = TypeLambda1.toTermName
+    val TermLambda2 = TypeLambda2.toTermName
+
     // the name to use for the type lambda itself.
     // e.g. the L in ({ type L[x] = Either[x, Int] })#L.
     val LambdaName = newTypeName(if (useAsciiNames) "L_kp" else "Λ$")
@@ -59,10 +63,15 @@ class KindRewriter(plugin: Plugin, val global: Global)
     val Plus = newTypeName("$plus")
     val Minus = newTypeName("$minus")
 
+    def isTermLambdaMarker(tree: Tree): Boolean = tree match {
+      case Ident(TermLambda1 | TermLambda2) => true
+      case _                                => false
+    }
+
     private var cnt = -1 // So we actually start naming from 0
 
     @inline
-    private def freshName(s: String) = {
+    final def freshName(s: String): String = {
       cnt += 1
       s + cnt + "$"
     }
@@ -121,6 +130,20 @@ class KindRewriter(plugin: Plugin, val global: Global)
     // ({type L[-A] = ... })#L.
     def makeTypeParamContra(name: Name, bounds: TypeBoundsTree = DefaultBounds): TypeDef =
       TypeDef(Modifiers(PARAM | CONTRAVARIANT), makeTypeName(name), Nil, bounds)
+
+    def polyLambda(tree: Tree): Tree = tree match {
+      case PolyLambda(methodName, (arrowType @ UnappliedType(_ :: targs)) :: Nil, Function1Tree(name, body)) =>
+        val (f, g) = targs match {
+          case a :: b :: Nil => (a, b)
+          case a :: Nil      => (a, a)
+          case _             => return tree
+        }
+        val TParam = newTypeName(freshName("A"))
+        atPos(tree.pos.makeTransparent)(
+          q"new $arrowType { def $methodName[$TParam]($name: $f[$TParam]): $g[$TParam] = $body }"
+        )
+      case _ => tree
+    }
 
     // The transform method -- this is where the magic happens.
     override def transform(tree: Tree): Tree = {
@@ -301,7 +324,7 @@ class KindRewriter(plugin: Plugin, val global: Global)
       // given a tree, see if it could possibly be a type lambda
       // (either placeholder syntax or lambda syntax). if so, handle
       // it, and if not, transform it in the normal way.
-      val result = tree match {
+      val result = polyLambda(tree match {
 
         // Lambda[A => Either[A, Int]] case.
         case AppliedTypeTree(Ident(TypeLambda1), AppliedTypeTree(target, a :: as) :: Nil) =>
@@ -318,7 +341,7 @@ class KindRewriter(plugin: Plugin, val global: Global)
         // Otherwise, carry on as normal.
         case _ =>
           super.transform(tree)
-      }
+      })
 
       // cache the result so we don't have to recompute it again later.
       treeCache(tree) = result

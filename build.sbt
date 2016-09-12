@@ -7,7 +7,10 @@ scalaVersion := "2.11.8"
 crossScalaVersions := Seq("2.10.6", "2.11.8", "2.12.0-RC1")
 
 libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
-
+libraryDependencies ++= (scalaBinaryVersion.value match {
+  case "2.10" => scala210ExtraDeps
+  case _      => Nil
+})
 // scalac options
 
 scalacOptions ++= Seq(
@@ -19,11 +22,28 @@ scalacOptions ++= Seq(
   "-unchecked"
 )
 
-scalacOptions in console in Compile += "-Xplugin:" + (packageBin in Compile).value
+List(Compile, Test) flatMap { config =>
+  Seq(
+    initialCommands in console in config := "import d_m._",
+    // Notice this is :=, not += - all the warning/lint options are simply
+    // impediments in the repl.
+    scalacOptions in console in config := Seq(
+      "-language:_",
+      "-Xplugin:" + (packageBin in Compile).value
+    )
+  )
+}
 
 scalacOptions in Test += "-Xplugin:" + (packageBin in Compile).value
 
 scalacOptions in Test += "-Yrangepos"
+
+test := (run in Test).toTask("").value
+
+def scala210ExtraDeps = Seq(
+  compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
+  "org.scalamacros" %% "quasiquotes" % "2.1.0"
+)
 
 // Useful for debugging:
 // scalacOptions in Test ++= Seq("-Xprint:typer", "-Xprint-pos")
