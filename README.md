@@ -195,8 +195,8 @@ Functor[Lambda[a => Future[List[a]]]]
 Other types which cannot be written correctly using inline syntax are:
 
  * `Lambda[a => (a, a)]` (repeated use of `a`).
- * `Lambda[(a, b) => Either[b, a]` (reverse order of type params).
- * `Lambda[(a, b) => Function1[a, Option[b]]` (similar to example).
+ * `Lambda[(a, b) => Either[b, a]]` (reverse order of type params).
+ * `Lambda[(a, b) => Function1[a, Option[b]]]` (similar to example).
 
 (And of course, you can use `λ[...]` instead of `Lambda[...]` in any
 of these expressions.)
