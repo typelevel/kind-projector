@@ -332,7 +332,7 @@ a value (e.g. `new Xyz[...] { ... }`) then it's a polymorphic lambda.
 What follows are the gory details of the polymorphic lambda rewrite.
 
 Polymorphic lambdas are a syntactic transformation that occurs just
-after parsing (before name resolution or typechecking). You code will
+after parsing (before name resolution or typechecking). Your code will
 be typechecked *after* the rewrite.
 
 Written in its most explicit form, a polymorphic lambda looks like
