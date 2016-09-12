@@ -157,6 +157,105 @@ expressive syntax kind-projector supports. The other syntaxes are
 easier to read at the cost of being unable to express certain
 (hopefully rare) type lambdas.
 
+### Polymorphic lambda values
+
+Scala does not have built-in syntax or types for anonymous function
+values which are polymorphic (i.e. which can be parameterized with
+types). To illustrate that consider both of these methods:
+
+```scala
+def firstInt(xs: List[Int]): Option[Int] = xs.headOption
+def firstGeneric[A](xs: List[A]): Option[A] = xs.headOption
+```
+
+But we can only represent the first method (`firstInt`) as an
+anonymous function value:
+
+```scala
+val firstInt0: List[Int] => Option[Int] = _.headOption
+val firstGeneric0 <what to put here???>
+```
+
+Several libraries define their own polymorphic function types, such as
+the following polymorphic version of `Function1` (which we can use to
+implement `firstGeneric0`):
+
+```scala
+trait PolyFunction1[-F[_], +G[_]] {
+  def apply[A](fa: F[A]): G[A]
+}
+
+val firstGeneric0: PolyFunction1[List, Option] =
+  new PolyFunction1[List, Option] {
+    def apply[A](xs: List[A]): Option[A] = xs.headOption
+  }
+```
+
+It's nice that `PolyFunction1` enables us to express polymorphic
+function values, but at the level of syntax it's not clear that we've
+saved much over defining a polymorphic method (i.e. `firstGeneric`).
+
+Since 0.9.0, Kind-projector provides a value-level rewrite to fix this
+issue and make polymorphic functions (and other types that share their
+general shape) easier to work with:
+
+```scala
+val firstGeneric0 = λ[PolyFunction1[List, Option]](_.headOption)
+```
+
+Either `λ` or `Lambda` can be used (in a value position) to trigger
+this rewrite. By default, the rewrite assumes that the "target method"
+to define is called `apply` (as in the previous example), but a
+different method can be selected via an explicit call.
+
+In the following example we are using the polymorphic lambda syntax to
+define a `run` method on an instance of the `PF` trait:
+
+```scala
+trait PF[-F[_], +G[_]] {
+  def run[A](fa: F[A]): G[A]
+}
+
+val f = Lambda[PF[List, Option]].run(_.headOption)
+```
+
+The previous features have all operated at the *type level* (in type
+positions), whereas this feature operates at the *value level* (in
+value positions). To avoid reserving too many names the `λ` and
+`Lambda` names were overloaded (similar to the relationship between
+types and their companion objects).
+
+Here are some examples of expressions, along with whether the lambda
+symbol involves represents a type (traditional type lambda) or a value
+(polymorphic lambda):
+
+```scala
+// type lamda (type level)
+val functor: Functor[λ[a => Either[Int, a]]] = implicitly
+
+// polymoprhic lambda (value level)
+val f = λ[Vector ~> List](_.toList)
+
+// type lambda (type level)
+trait CF2 extends Contravariant[λ[a => Function2[a, a, Double]]] {
+  ...
+}
+
+// polymorphic lambda (value level)
+xyz.translate(λ[F ~> G](fx => fx.flatMap(g)))
+```
+
+One pattern you might notice is that when `λ` occurs immediately
+within `[]` it is referring to a type lambda (since `[]` signals a
+type application), whereas when it occurs after `=` or within `()` it
+usually refers to a polymorphic lambda, since those tokens usually
+signal a value. (The `()` syntax for tuple and function types is
+an exception to this.)
+
+The bottom line is that if you could replace an expression with a type
+constructor, it's a type lambda, and if you could replace it with a
+value (i.e. `new Xyz[...] { ... }`) then it's a polymorphic lambda.
+
 ### Gotchas
 
 The inline syntax is the tersest and is often preferable when
