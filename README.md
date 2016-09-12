@@ -157,7 +157,7 @@ expressive syntax kind-projector supports. The other syntaxes are
 easier to read at the cost of being unable to express certain
 (hopefully rare) type lambdas.
 
-### Gotchas
+### Type lambda gotchas
 
 The inline syntax is the tersest and is often preferable when
 possible. However, there are some type lambdas which it cannot
@@ -221,6 +221,190 @@ might conflict with names the plugin generates.
 If you dislike these unicode names, pass `-Dkp:genAsciiNames=true` to
 scalac to use munged ASCII names. This will use `L_kp` in place of
 `Λ$`, `X_kp0$` in place of `α$`, and so on.
+
+### Polymorphic lambda values
+
+Scala does not have built-in syntax or types for anonymous function
+values which are polymorphic (i.e. which can be parameterized with
+types). To illustrate that consider both of these methods:
+
+```scala
+def firstInt(xs: List[Int]): Option[Int] = xs.headOption
+def firstGeneric[A](xs: List[A]): Option[A] = xs.headOption
+```
+
+Having implemented these methods, we can see that the second just
+generalizes the first to work with any type: the function bodies are
+identical. We'd like to be able to rewrite each of these methods as a
+function value, but we can only represent the first method
+(`firstInt`) this way:
+
+```scala
+val firstInt0: List[Int] => Option[Int] = _.headOption
+val firstGeneric0 <what to put here???>
+```
+
+(One reason to want to do this rewrite is that we might have a method
+like `.map` which we'd like to pass an anonymous function value.)
+
+Several libraries define their own polymorphic function types, such as
+the following polymorphic version of `Function1` (which we can use to
+implement `firstGeneric0`):
+
+```scala
+trait PolyFunction1[-F[_], +G[_]] {
+  def apply[A](fa: F[A]): G[A]
+}
+
+val firstGeneric0: PolyFunction1[List, Option] =
+  new PolyFunction1[List, Option] {
+    def apply[A](xs: List[A]): Option[A] = xs.headOption
+  }
+```
+
+It's nice that `PolyFunction1` enables us to express polymorphic
+function values, but at the level of syntax it's not clear that we've
+saved much over defining a polymorphic method (i.e. `firstGeneric`).
+
+Since 0.9.0, Kind-projector provides a value-level rewrite to fix this
+issue and make polymorphic functions (and other types that share their
+general shape) easier to work with:
+
+```scala
+val firstGeneric0 = λ[PolyFunction1[List, Option]](_.headOption)
+```
+
+Either `λ` or `Lambda` can be used (in a value position) to trigger
+this rewrite. By default, the rewrite assumes that the "target method"
+to define is called `apply` (as in the previous example), but a
+different method can be selected via an explicit call.
+
+In the following example we are using the polymorphic lambda syntax to
+define a `run` method on an instance of the `PF` trait:
+
+```scala
+trait PF[-F[_], +G[_]] {
+  def run[A](fa: F[A]): G[A]
+}
+
+val f = Lambda[PF[List, Option]].run(_.headOption)
+```
+
+Kind-projector's support for type lambdas operates at the *type level*
+(in type positions), whereas this feature operates at the *value
+level* (in value positions). To avoid reserving too many names the `λ`
+and `Lambda` names were overloaded to do both (mirroring the
+relationship between types and their companion objects).
+
+Here are some examples of expressions, along with whether the lambda
+symbol involved represents a type (traditional type lambda) or a value
+(polymorphic lambda):
+
+```scala
+// type lambda (type level)
+val functor: Functor[λ[a => Either[Int, a]]] = implicitly
+
+// polymorphic lambda (value level)
+val f = λ[Vector ~> List](_.toList)
+
+// type lambda (type level)
+trait CF2 extends Contravariant[λ[a => Function2[a, a, Double]]] {
+  ...
+}
+
+// polymorphic lambda (value level)
+xyz.translate(λ[F ~> G](fx => fx.flatMap(g)))
+```
+
+One pattern you might notice is that when `λ` occurs immediately
+within `[]` it is referring to a type lambda (since `[]` signals a
+type application), whereas when it occurs after `=` or within `()` it
+usually refers to a polymorphic lambda, since those tokens usually
+signal a value. (The `()` syntax for tuple and function types is an
+exception to this pattern.)
+
+The bottom line is that if you could replace a λ-expression with a
+type constructor, it's a type lambda, and if you could replace it with
+a value (i.e. `new Xyz[...] { ... }`) then it's a polymorphic lambda.
+
+### Polymorphic lambdas under the hood
+
+What follos are the gory details of the polymorphic lambda rewrite.
+
+Polymorphic lambdas are a syntactic transformation that occurs just
+after parsing (before name resolution or typechecking). You code will
+be typechecked *after* the rewrite.
+
+Written in its most explicit form, a polymorphic lambda looks like
+this:
+
+```scala
+λ[Op[F, G]].someMethod(<expr>)
+```
+
+and is rewritten into something like this:
+
+```scala
+new Op[F, G] {
+  def someMethod[A](x: F[A]): G[A] = <expr>(x)
+}
+```
+
+(The names `A` and `x` are used for clarity –- in practice unique
+names will be used for both.)
+
+This rewrite requires that the following are true:
+
+ * `F` and `G` are unary type constructors (i.e. of shape `F[_]` and `G[_]`).
+ * `<expr>` is an expression of type `Function1[_, _]`.
+ * `Op` is parameterized on two unary type constructors.
+ * `someMethod` is parametric (for any type `A` it takes `F[A]` and returns `G[A]`).
+ 
+For example, `Op` might be defined like this:
+
+```scala
+trait Op[M[_], N[_]] {
+  def someMethod[A](x: M[A]): N[A]
+}
+```
+
+The entire λ-expression will be rewritten immediately after parsing
+(and before name resolution or typechecking). If any of these
+constraints are not met, then a compiler error will occur during a
+later phase (likely type-checking).
+
+Here are some polymorphic lambdas along with the corresponding code
+after the rewrite:
+
+```scala
+val f = Lambda[NaturalTransformation[Stream, List]](_.toList)
+val f = new NaturalTransformation[Stream, List] {
+  def apply[A](x: Stream[A]): List[A] = x.toList
+}
+
+trait Id[A] = A
+val g = λ[Id ~> Option].run(x => Some(x))
+val g = new (Id ~> Option) {
+  def run[A](x: Id[A]): Option[A] = Some(x)
+}
+
+val h = λ[Either[Unit, ?] Convert Option](_.fold(_ => None, a => Some(a)))
+val h = new Convert[Either[Unit, ?], Option] {
+  def apply[A](x: Either[Unit, A]): Option[A] =
+    x.fold(_ => None, a => Some(a))
+}
+
+// that last example also includes a type lambda.
+// the full expansion would be:
+val h = new Convert[({type Λ$[β$0$] = Either[Unit, β$0$]})#Λ$, Option] {
+  def apply[A](x: ({type Λ$[β$0$] = Either[Unit, β$0$]})#Λ$): Option[A] =
+    x.fold(_ => None, a => Some(a))
+}
+```
+
+Unfortunately the type errors produced by invalid polymorphic lambdas
+are likely to be difficult to read. This is an unavoidable consequence
+of doing this transformation at the syntactic level.
 
 ### Building the plugin
 
