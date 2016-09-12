@@ -168,8 +168,9 @@ def firstInt(xs: List[Int]): Option[Int] = xs.headOption
 def firstGeneric[A](xs: List[A]): Option[A] = xs.headOption
 ```
 
-But we can only represent the first method (`firstInt`) as an
-anonymous function value:
+We can implement both of these methods. We'd like to be able to
+rewrite each of these as a function value, but we can only represent
+the first method (`firstInt`) this way:
 
 ```scala
 val firstInt0: List[Int] => Option[Int] = _.headOption
