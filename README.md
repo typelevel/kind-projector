@@ -390,7 +390,7 @@ val f = new NaturalTransformation[Stream, List] {
   def apply[A](x: Stream[A]): List[A] = x.toList
 }
 
-trait Id[A] = A
+type Id[A] = A
 val g = λ[Id ~> Option].run(x => Some(x))
 val g = new (Id ~> Option) {
   def run[A](x: Id[A]): Option[A] = Some(x)
