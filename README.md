@@ -232,7 +232,7 @@ and `Lambda` names were overloaded to do both (mirroring the
 relationship between types and their companion objects).
 
 Here are some examples of expressions, along with whether the lambda
-symbol involves represents a type (traditional type lambda) or a value
+symbol involved represents a type (traditional type lambda) or a value
 (polymorphic lambda):
 
 ```scala
