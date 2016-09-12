@@ -157,6 +157,71 @@ expressive syntax kind-projector supports. The other syntaxes are
 easier to read at the cost of being unable to express certain
 (hopefully rare) type lambdas.
 
+### Type lambda gotchas
+
+The inline syntax is the tersest and is often preferable when
+possible. However, there are some type lambdas which it cannot
+express.
+
+For example, imagine that we have `trait Functor[F[_]]`.
+
+You might want to write `Functor[Future[List[?]]]`, expecting to get
+something like:
+
+```scala
+type X[a] = Future[List[a]]
+Functor[X]
+```
+
+However, `?` always binds at the tightest level, meaning that
+`List[?]` is interpreted as `type X[a] = List[a]`, and that
+`Future[List[?]]` is invalid.
+
+In these cases you should prefer the lambda syntax, which would be
+written as:
+
+```scala
+Functor[Lambda[a => Future[List[a]]]]
+```
+
+Other types which cannot be written correctly using inline syntax are:
+
+ * `Lambda[a => (a, a)]` (repeated use of `a`).
+ * `Lambda[(a, b) => Either[b, a]` (reverse order of type params).
+ * `Lambda[(a, b) => Function1[a, Option[b]]` (similar to example).
+
+(And of course, you can use `λ[...]` instead of `Lambda[...]` in any
+of these expressions.)
+
+### Under The Hood
+
+This section shows the exact code produced for a few type lambda
+expressions.
+
+```scala
+Either[Int, ?]
+({type Λ$[β$0$] = Either[Int, β$0$]})#Λ$
+
+Function2[-?, String, +?]
+({type Λ$[-α$0$, +γ$0$] = Function2[α$0$, String, γ$0$]})#Λ$
+
+Lambda[A => (A, A)]
+({type Λ$[A] = (A, A)})#Λ$
+
+Lambda[(`+A`, B) => Either[A, Option[B]]]
+({type Λ$[+A, B] = Either[A, Option[B]]})#Λ$
+
+Lambda[(A, B[_]) => B[A]]
+({type Λ$[A, B[_]] = B[A]})#Λ$
+```
+
+As you can see, names like `Λ$` and `α$` are forbidden because they
+might conflict with names the plugin generates.
+
+If you dislike these unicode names, pass `-Dkp:genAsciiNames=true` to
+scalac to use munged ASCII names. This will use `L_kp` in place of
+`Λ$`, `X_kp0$` in place of `α$`, and so on.
+
 ### Polymorphic lambda values
 
 Scala does not have built-in syntax or types for anonymous function
@@ -262,70 +327,84 @@ The bottom line is that if you could replace a λ-expression with a
 type constructor, it's a type lambda, and if you could replace it with
 a value (i.e. `new Xyz[...] { ... }`) then it's a polymorphic lambda.
 
-### Gotchas
+### Polymorphic lambdas under the hood
 
-The inline syntax is the tersest and is often preferable when
-possible. However, there are some type lambdas which it cannot
-express.
+What follos are the gory details of the polymorphic lambda rewrite.
 
-For example, imagine that we have `trait Functor[F[_]]`.
+Polymorphic lambdas are a syntactic transformation that occurs just
+after parsing (before name resolution or typechecking). You code will
+be typechecked *after* the rewrite.
 
-You might want to write `Functor[Future[List[?]]]`, expecting to get
-something like:
-
-```scala
-type X[a] = Future[List[a]]
-Functor[X]
-```
-
-However, `?` always binds at the tightest level, meaning that
-`List[?]` is interpreted as `type X[a] = List[a]`, and that
-`Future[List[?]]` is invalid.
-
-In these cases you should prefer the lambda syntax, which would be
-written as:
+Written in its most explicit form, a polymorphic lambda looks like
+this:
 
 ```scala
-Functor[Lambda[a => Future[List[a]]]]
+λ[Op[F, G]].someMethod(<expr>)
 ```
 
-Other types which cannot be written correctly using inline syntax are:
-
- * `Lambda[a => (a, a)]` (repeated use of `a`).
- * `Lambda[(a, b) => Either[b, a]` (reverse order of type params).
- * `Lambda[(a, b) => Function1[a, Option[b]]` (similar to example).
-
-(And of course, you can use `λ[...]` instead of `Lambda[...]` in any
-of these expressions.)
-
-### Under The Hood
-
-This section shows the exact code produced for a few type lambda
-expressions.
+and is rewritten into something like this:
 
 ```scala
-Either[Int, ?]
-({type Λ$[β$0$] = Either[Int, β$0$]})#Λ$
-
-Function2[-?, String, +?]
-({type Λ$[-α$0$, +γ$0$] = Function2[α$0$, String, γ$0$]})#Λ$
-
-Lambda[A => (A, A)]
-({type Λ$[A] = (A, A)})#Λ$
-
-Lambda[(`+A`, B) => Either[A, Option[B]]]
-({type Λ$[+A, B] = Either[A, Option[B]]})#Λ$
-
-Lambda[(A, B[_]) => B[A]]
-({type Λ$[A, B[_]] = B[A]})#Λ$
+new Op[F, G] {
+  def someMethod[A](x: F[A]): G[A] = <expr>(x)
+}
 ```
 
-As you can see, names like `Λ$` and `α$` are forbidden because they
-might conflict with names the plugin generates.
+(The names `A` and `x` are used for clarity –- in practice unique
+names will be used for both.)
 
-If you dislike these unicode names, pass `-Dkp:genAsciiNames=true` to
-scalac to use munged ASCII names. This will use `L_kp` in place of
-`Λ$`, `X_kp0$` in place of `α$`, and so on.
+This rewrite requires that the following are true:
+
+ * `F` and `G` are unary type constructors (i.e. of shape `F[_]` and `G[_]`).
+ * `<expr>` is an expression of type `Function1[_, _]`.
+ * `Op` is parameterized on two unary type constructors.
+ * `someMethod` is parametric (for any type `A` it takes `F[A]` and returns `G[A]`).
+ 
+For example, `Op` might be defined like this:
+
+```scala
+trait Op[M[_], N[_]] {
+  def someMethod[A](x: M[A]): N[A]
+}
+```
+
+The entire λ-expression will be rewritten immediately after parsing
+(and before name resolution or typechecking). If any of these
+constraints are not met, then a compiler error will occur during a
+later phase (likely type-checking).
+
+Here are some polymorphic lambdas along with the corresponding code
+after the rewrite:
+
+```scala
+val f = Lambda[NaturalTransformation[Stream, List]](_.toList)
+val f = new NaturalTransformation[Stream, List] {
+  def apply[A](x: Stream[A]): List[A] = x.toList
+}
+
+trait Id[A] = A
+val g = λ[Id ~> Option].run(x => Some(x))
+val g = new (Id ~> Option) {
+  def run[A](x: Id[A]): Option[A] = Some(x)
+}
+
+val h = λ[Either[Unit, ?] Convert Option](_.fold(_ => None, a => Some(a)))
+val h = new Convert[Either[Unit, ?], Option] {
+  def apply[A](x: Either[Unit, A]): Option[A] =
+    x.fold(_ => None, a => Some(a))
+}
+
+// that last example also includes a type lambda.
+// the full expansion would be:
+val h = new Convert[({type Λ$[β$0$] = Either[Unit, β$0$]})#Λ$, Option] {
+  def apply[A](x: ({type Λ$[β$0$] = Either[Unit, β$0$]})#Λ$): Option[A] =
+    x.fold(_ => None, a => Some(a))
+}
+```
+
+Unfortunately the type errors produced by invalid polymorphic lambdas
+are likely to be difficult to read. This is an unavoidable consequence
+of doing this transformation at the syntactic level.
 
 ### Building the plugin
 
