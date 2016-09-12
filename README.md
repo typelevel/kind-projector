@@ -236,10 +236,10 @@ symbol involves represents a type (traditional type lambda) or a value
 (polymorphic lambda):
 
 ```scala
-// type lamda (type level)
+// type lambda (type level)
 val functor: Functor[λ[a => Either[Int, a]]] = implicitly
 
-// polymoprhic lambda (value level)
+// polymorphic lambda (value level)
 val f = λ[Vector ~> List](_.toList)
 
 // type lambda (type level)
