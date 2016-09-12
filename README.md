@@ -325,11 +325,11 @@ exception to this pattern.)
 
 The bottom line is that if you could replace a λ-expression with a
 type constructor, it's a type lambda, and if you could replace it with
-a value (i.e. `new Xyz[...] { ... }`) then it's a polymorphic lambda.
+a value (e.g. `new Xyz[...] { ... }`) then it's a polymorphic lambda.
 
 ### Polymorphic lambdas under the hood
 
-What follos are the gory details of the polymorphic lambda rewrite.
+What follows are the gory details of the polymorphic lambda rewrite.
 
 Polymorphic lambdas are a syntactic transformation that occurs just
 after parsing (before name resolution or typechecking). You code will
