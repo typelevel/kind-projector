@@ -168,14 +168,19 @@ def firstInt(xs: List[Int]): Option[Int] = xs.headOption
 def firstGeneric[A](xs: List[A]): Option[A] = xs.headOption
 ```
 
-We can implement both of these methods. We'd like to be able to
-rewrite each of these as a function value, but we can only represent
-the first method (`firstInt`) this way:
+Having implemented these methods, we can see that the second just
+generalizes the first to work with any type: the function bodies are
+identical. We'd like to be able to rewrite each of these methods as a
+function value, but we can only represent the first method
+(`firstInt`) this way:
 
 ```scala
 val firstInt0: List[Int] => Option[Int] = _.headOption
 val firstGeneric0 <what to put here???>
 ```
+
+(One reason to want to do this rewrite is that we might have a method
+like `.map` which we'd like to pass an anonymous function value.)
 
 Several libraries define their own polymorphic function types, such as
 the following polymorphic version of `Function1` (which we can use to
@@ -220,11 +225,11 @@ trait PF[-F[_], +G[_]] {
 val f = Lambda[PF[List, Option]].run(_.headOption)
 ```
 
-The previous features have all operated at the *type level* (in type
-positions), whereas this feature operates at the *value level* (in
-value positions). To avoid reserving too many names the `λ` and
-`Lambda` names were overloaded (similar to the relationship between
-types and their companion objects).
+Kind-projector's support for type lambdas operates at the *type level*
+(in type positions), whereas this feature operates at the *value
+level* (in value positions). To avoid reserving too many names the `λ`
+and `Lambda` names were overloaded to do both (mirroring the
+relationship between types and their companion objects).
 
 Here are some examples of expressions, along with whether the lambda
 symbol involves represents a type (traditional type lambda) or a value
@@ -250,12 +255,12 @@ One pattern you might notice is that when `λ` occurs immediately
 within `[]` it is referring to a type lambda (since `[]` signals a
 type application), whereas when it occurs after `=` or within `()` it
 usually refers to a polymorphic lambda, since those tokens usually
-signal a value. (The `()` syntax for tuple and function types is
-an exception to this.)
+signal a value. (The `()` syntax for tuple and function types is an
+exception to this pattern.)
 
-The bottom line is that if you could replace an expression with a type
-constructor, it's a type lambda, and if you could replace it with a
-value (i.e. `new Xyz[...] { ... }`) then it's a polymorphic lambda.
+The bottom line is that if you could replace a λ-expression with a
+type constructor, it's a type lambda, and if you could replace it with
+a value (i.e. `new Xyz[...] { ... }`) then it's a polymorphic lambda.
 
 ### Gotchas
 
