@@ -298,6 +298,29 @@ trait PF[-F[_], +G[_]] {
 val f = Lambda[PF[List, Option]].run(_.headOption)
 ```
 
+It's possible to nest this syntax. Here's an example taken from
+[the wild](http://www.slideshare.net/timperrett/enterprise-algebras-scala-world-2016/49)
+of using nested polymorphic lambdas to remove boilerplate:
+
+```scala
+// without polymorphic lambas, as in the slide
+def injectFC[F[_], G[_]](implicit I: Inject[F, G]) =
+  new (FreeC[F, ?] ~> FreeC[G, ?]) {
+    def apply[A](fa: FreeC[F, A]): FreeC[G, A] =
+      fa.mapSuspension[Coyoneda[G, ?]](
+        new (Coyoneda[F, ?] ~> Coyoneda[G, ?]) {
+          def apply[B](fb: Coyoneda[F, B]): Coyoneda[G, B] = fb.trans(I)
+        }
+      )
+  }
+
+// with polymorphic lambas
+def injectFC[F[_], G[_]](implicit I: Inject[F, G]) =
+  λ[FreeC[F, ?] ~> FreeC[G, ?]](
+    _.mapSuspension(λ[Coyoneda[F, ?] ~> Coyoneda[G, ?]](_.trans(I)))
+  )
+```
+
 Kind-projector's support for type lambdas operates at the *type level*
 (in type positions), whereas this feature operates at the *value
 level* (in value positions). To avoid reserving too many names the `λ`
@@ -367,7 +390,7 @@ This rewrite requires that the following are true:
  * `<expr>` is an expression of type `Function1[_, _]`.
  * `Op` is parameterized on two unary type constructors.
  * `someMethod` is parametric (for any type `A` it takes `F[A]` and returns `G[A]`).
- 
+
 For example, `Op` might be defined like this:
 
 ```scala
