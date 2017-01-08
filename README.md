@@ -76,19 +76,19 @@ maven-scala-plugin (remember to use `_2.10`, `_2.11` or
 `_2.12` as appropriate):
 
     <plugin>
-				  <groupId>net.alchim31.maven</groupId>
-				  <artifactId>scala-maven-plugin</artifactId>
+      <groupId>net.alchim31.maven</groupId>
+      <artifactId>scala-maven-plugin</artifactId>
       ...
-				  <configuration>
-					   <compilerPlugins>
-						    <compilerPlugin>
-							     <groupId>org.spire-math</groupId>
-							     <artifactId>kind-projector_2.11</artifactId>
-							     <version>0.9.3</version>
-						    </compilerPlugin>
-					   </compilerPlugins>
-				  </configuration>
-			 </plugin>
+      <configuration>
+        <compilerPlugins>
+          <compilerPlugin>
+            <groupId>org.spire-math</groupId>
+            <artifactId>kind-projector_2.11</artifactId>
+            <version>0.9.3</version>
+          </compilerPlugin>
+        </compilerPlugins>
+      </configuration>
+    </plugin>
 
 That's it!
 
