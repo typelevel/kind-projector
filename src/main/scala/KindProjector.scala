@@ -2,15 +2,12 @@ package d_m
 
 import scala.tools.nsc
 import nsc.Global
-import nsc.Phase
 import nsc.plugins.Plugin
 import nsc.plugins.PluginComponent
 import nsc.transform.Transform
-import nsc.transform.InfoTransform
 import nsc.transform.TypingTransformers
 import nsc.symtab.Flags._
 import nsc.ast.TreeDSL
-import nsc.typechecker
 
 import scala.reflect.NameTransformer
 import scala.collection.mutable
