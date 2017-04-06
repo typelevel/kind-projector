@@ -1,5 +1,7 @@
 package d_m
 
+import org.junit.Test
+
 trait ~>[-F[_], +G[_]] {
   def apply[A](x: F[A]): G[A]
 }
@@ -8,7 +10,7 @@ trait ~>>[-F[_], +G[_]] {
 }
 final case class Const[A, B](getConst: A)
 
-object PolyLambdas {
+class PolyLambdas {
   type ToSelf[F[_]] = F ~> F
 
   val kf1 = Lambda[Option ~> Vector](_.toVector)
@@ -45,7 +47,8 @@ object PolyLambdas {
   def const5[A] : ToSelf[Const[A, ?]]        = λ[ToSelf[λ[B => Const[A, B]]]](x => x)
   def const6[A] : Const[A, ?] ~> Const[A, ?] = λ[ToSelf[λ[B => Const[A, B]]]](x => x)
 
-  def main(args: Array[String]): Unit = {
+  @Test
+  def polylambda(): Unit = {
     assert(kf1(None) == Vector())
     assert(kf1(Some("a")) == Vector("a"))
     assert(kf1(Some(5d)) == Vector(5d))
