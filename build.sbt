@@ -4,9 +4,9 @@ licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
 homepage := Some(url("http://github.com/non/kind-projector"))
 
 scalaVersion := "2.11.8"
-crossScalaVersions := Seq("2.10.6", "2.11.8", "2.12.0")
+crossScalaVersions := Seq("2.10.6", "2.11.8", "2.12.1")
 
-libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
+libraryDependencies += scalaOrganization.value % "scala-compiler" % scalaVersion.value
 libraryDependencies ++= (scalaBinaryVersion.value match {
   case "2.10" => scala210ExtraDeps
   case _      => Nil
@@ -34,11 +34,22 @@ List(Compile, Test) flatMap { config =>
   )
 }
 
-scalacOptions in Test += "-Xplugin:" + (packageBin in Compile).value
+scalacOptions in Test ++= {
+  val jar = (packageBin in Compile).value
+  Seq(s"-Xplugin:${jar.getAbsolutePath}", s"-Jdummy=${jar.lastModified}") // ensures recompile
+}
 
 scalacOptions in Test += "-Yrangepos"
 
-test := (run in Test).toTask("").value
+libraryDependencies += "com.novocode" % "junit-interface" % "0.11" % "test"
+testOptions += Tests.Argument(TestFrameworks.JUnit, "-a", "-v")
+
+fork in Test := true
+libraryDependencies += "org.ensime" %% "pcplod" % "1.2.0" % Test
+javaOptions in Test ++= Seq(
+  s"""-Dpcplod.settings=${(scalacOptions in Test).value.mkString(",")}""",
+  s"""-Dpcplod.classpath=${(fullClasspath in Test).value.map(_.data).mkString(",")}"""
+)
 
 def scala210ExtraDeps = Seq(
   compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
