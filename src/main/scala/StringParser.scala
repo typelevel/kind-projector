@@ -1,6 +1,5 @@
 package d_m
 
-import scala.reflect.macros.ParseException
 import scala.tools.nsc.Global
 import scala.tools.nsc.reporters.StoreReporter
 
