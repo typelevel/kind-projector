@@ -45,7 +45,7 @@ libraryDependencies += "com.novocode" % "junit-interface" % "0.11" % "test"
 testOptions += Tests.Argument(TestFrameworks.JUnit, "-a", "-v")
 
 fork in Test := true
-libraryDependencies += "org.ensime" %% "pcplod" % "1.2.0" % Test
+libraryDependencies += "org.ensime" %% "pcplod" % "1.2.1" % Test
 javaOptions in Test ++= Seq(
   s"""-Dpcplod.settings=${(scalacOptions in Test).value.mkString(",")}""",
   s"""-Dpcplod.classpath=${(fullClasspath in Test).value.map(_.data).mkString(",")}"""
