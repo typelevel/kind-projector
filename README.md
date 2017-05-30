@@ -49,7 +49,7 @@ reserving those identifiers, then this compiler plugin is for you!
 
 ### Using the plugin
 
-Kind-projector supports Scala 2.10, 2.11, and 2.12.
+Kind-projector supports Scala 2.10, 2.11, 2.12, and 2.13.0-M1.
 
 To use this plugin in your own projects, add the following lines to
 your `build.sbt` file:
@@ -57,10 +57,10 @@ your `build.sbt` file:
 ```scala
 resolvers += Resolver.sonatypeRepo("releases")
 
-addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
+addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4")
 
 // if your project uses multiple Scala versions, use this for cross building
-addCompilerPlugin("org.spire-math" % "kind-projector" % "0.9.3" cross CrossVersion.binary)
+addCompilerPlugin("org.spire-math" % "kind-projector" % "0.9.4" cross CrossVersion.binary)
 
 // if your project uses both 2.10 and polymorphic lambdas
 libraryDependencies ++= (scalaBinaryVersion.value match {
@@ -84,7 +84,7 @@ maven-scala-plugin (remember to use `_2.10`, `_2.11` or
           <compilerPlugin>
             <groupId>org.spire-math</groupId>
             <artifactId>kind-projector_2.11</artifactId>
-            <version>0.9.3</version>
+            <version>0.9.4</version>
           </compilerPlugin>
         </compilerPlugins>
       </configuration>
