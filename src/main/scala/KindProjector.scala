@@ -162,8 +162,9 @@ class KindRewriter(plugin: Plugin, val global: Global)
         case Ident(name) =>
           makeTypeParamFromName(name)
 
-        case TypeDef(m, nm, ps, bs) =>
-          TypeDef(Modifiers(PARAM), nm, ps.map(makeComplexTypeParam), bs)
+        case AppliedTypeTree(Ident(name), ps) =>
+          val tparams = ps.map(makeComplexTypeParam)
+          TypeDef(Modifiers(PARAM), makeTypeName(name), tparams, DefaultBounds)
 
         case ExistentialTypeTree(AppliedTypeTree(Ident(name), ps), _) =>
           val tparams = ps.map(makeComplexTypeParam)

@@ -36,7 +36,7 @@ object Test {
   def qux[T[_[_]]] = ()
   qux[({type L[A[_]] = Unit})#L]
   qux[Lambda[A[_] => Unit]]
-  qux[Lambda[A[B] => Unit]] // OK
+  qux[Lambda[A[B] => Unit]]
 
   trait Functor[F[_]]
   trait EitherT[F[_], A, B]
@@ -47,9 +47,9 @@ object Test {
   def vex[T[_[_[_]]]] = ()
   vex[({type L[A[_[_]]] = Unit})#L]
   vex[Lambda[A[_[_]] => Unit]]
-  vex[Lambda[A[B[_]] => Unit]] // OK
-  vex[Lambda[A[_[C]] => Unit]] // OK
-  vex[Lambda[A[B[C]] => Unit]] // error
+  vex[Lambda[A[B[_]] => Unit]]
+  vex[Lambda[A[_[C]] => Unit]]
+  vex[Lambda[A[B[C]] => Unit]]
 
   def hex[T[_[_[_[_]]]]] = ()
   hex[({type L[A[_[_[_]]]] = Unit})#L]
