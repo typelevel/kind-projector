@@ -16,9 +16,27 @@ class KindProjector(val global: Global) extends Plugin {
   val name = "kind-projector"
   val description = "Expand type lambda syntax"
   val components = new KindRewriter(this, global) :: Nil
+
+  var enableForall = false
+
+  override def processOptions(options: List[String], error: String => Unit): Unit = {
+
+    // enable ∀ rewrites if "forall=true" is present
+    val (forallOpts, rest) = options partition { _.split("=")(0) == "forall" }
+    enableForall = forallOpts.lastOption match {
+      case Some(opt) =>
+        opt.split("=").tail match {
+          case Array("true") => true
+          case _ => false
+        }
+      case None => false
+    }
+
+    if(rest.nonEmpty) error(s"Unrecognized ${name} options: ${rest.mkString}")
+  }
 }
 
-class KindRewriter(plugin: Plugin, val global: Global)
+class KindRewriter(plugin: KindProjector, val global: Global)
     extends PluginComponent with Transform with TypingTransformers with TreeDSL {
 
   import global._
@@ -192,7 +210,7 @@ class KindRewriter(plugin: Plugin, val global: Global)
         atPos(tree.pos.makeTransparent)(
           q"new $arrowType { def $methodName[$TParam]($name: $f[$TParam]): $g[$TParam] = $body }"
         )
-      case PolyVal(targetType, methodName, tArgs, body) =>
+      case PolyVal(targetType, methodName, tArgs, body) if plugin.enableForall =>
         atPos(tree.pos.makeTransparent)(tArgs match {
           case Nil =>
             val tParam = newTypeName(freshName("A"))

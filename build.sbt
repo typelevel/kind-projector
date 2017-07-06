@@ -41,6 +41,8 @@ scalacOptions in Test ++= {
 
 scalacOptions in Test += "-Yrangepos"
 
+scalacOptions in Test += "-P:kind-projector:forall=true"
+
 libraryDependencies += "com.novocode" % "junit-interface" % "0.11" % "test"
 testOptions += Tests.Argument(TestFrameworks.JUnit, "-a", "-v")
 
