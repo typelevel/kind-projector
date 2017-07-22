@@ -41,6 +41,14 @@ trait Extractors {
       case _                                                            => None
     }
   }
+  object TermLambda {
+    private val LambdaName = newTermName("Λ")
+
+    def unapply(tree: Tree): Option[(List[Tree], Tree)] = tree match {
+      case Apply(TypeApply(Ident(name), tParams), body :: Nil) if name == LambdaName => Some((tParams, body))
+      case _                                                                         => None
+    }
+  }
   object TermNuType {
     private val NuName = newTermName("ν")
 
@@ -51,6 +59,9 @@ trait Extractors {
   }
   object PolyVal {
     def unapply(tree: Tree): Option[(Tree, TermName, List[Tree], Tree)] = tree match {
+
+      // Λ[A, B, ...](e) : T
+      case Typed(TermLambda(tParams, body), tpe)                                   => Some((tpe, nme.apply, tParams, body))
 
       // ν[T].method[A, B, ...](e)
       case Apply(TypeApply(Select(TermNuType(tpe), method), tParams), body :: Nil) => Some((tpe, method.toTermName, tParams, body))

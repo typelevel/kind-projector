@@ -30,12 +30,15 @@ class PolyVals {
     def functor: Functor[F]
   }
 
+  final class Fun[A, B](val run: A => B)
+
   // universally quantified semigroup
   type SemigroupK[F[_]] = Forall[λ[α => Semigroup[F[α]]]]
 
   // natural transformations
-  type ~>[F[_]   , G[_]   ] = Forall [λ[α    => F[α] => G[α]]]
-  type ≈>[F[_[_]], G[_[_]]] = ForallK[λ[α[_] => F[α] => G[α]]]
+  type  ~>[F[_]   , G[_]   ] = Forall [λ[α      => F[α]    => G[α]]]
+  type  ≈>[F[_[_]], G[_[_]]] = ForallK[λ[α[_]   => F[α]    => G[α]]]
+  type ~~>[F[_, _], G[_, _]] = Forall2[λ[(α, β) => F[α, β] => G[α, β]]]
 
   // Const functor and constructors
   type ConstA[A] = Forall[Const[A, ?]]
@@ -61,6 +64,8 @@ class PolyVals {
     val monadToFunctor1 = ν[Monad ≈> Functor][F[_]](_.functor)
     val monadToFunctor2 = ν[Monad ≈> Functor].apply[F[_]]((m: Monad[F]) => m.functor)
 
+    val fun = Λ[A, B](new Fun(_)): Function1 ~~> Fun
+
     val listFunctor = new Functor[List] {}
     val listMonad = new Monad[List] { def functor = listFunctor }
 
@@ -68,6 +73,7 @@ class PolyVals {
     assert(headOption2[Int](List(1, 2)) == Some(1))
     assert(monadToFunctor1[List](listMonad) == listFunctor)
     assert(monadToFunctor2[List](listMonad) == listFunctor)
+    assert(fun[String, Int](_.length).run("foo") == 3)
   }
 
   @Test
