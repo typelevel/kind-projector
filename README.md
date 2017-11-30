@@ -526,10 +526,17 @@ liability of any kind.
 If you are using kind-projector in one of your projects, please feel
 free to get in touch to report problems (or a lack of problems)!
 
+### Maintainers
+
+The project's current maintainers are:
+
+ * [Erik Osheim](http://github.com/non)
+ * [Tomas Mikula](http://github.com/tomasmikula)
+
 ### Copyright and License
 
 All code is available to you under the MIT license, available at
 http://opensource.org/licenses/mit-license.php and also in the COPYING
 file.
 
-Copyright Erik Osheim, 2011-2016.
+Copyright Erik Osheim, 2011-2017.
