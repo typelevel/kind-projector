@@ -4,7 +4,7 @@ licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
 homepage := Some(url("http://github.com/non/kind-projector"))
 
 scalaVersion := "2.11.11"
-crossScalaVersions := Seq("2.10.6", "2.11.11", "2.12.2", "2.13.0-M1")
+crossScalaVersions := Seq("2.10.6", "2.11.11", "2.12.2", "2.13.0-M2")
 
 libraryDependencies += scalaOrganization.value % "scala-compiler" % scalaVersion.value
 libraryDependencies ++= (scalaBinaryVersion.value match {
@@ -45,11 +45,11 @@ libraryDependencies += "com.novocode" % "junit-interface" % "0.11" % "test"
 testOptions += Tests.Argument(TestFrameworks.JUnit, "-a", "-v")
 
 fork in Test := true
-libraryDependencies += "org.ensime" %% "pcplod" % "1.2.1" % Test
-javaOptions in Test ++= Seq(
-  s"""-Dpcplod.settings=${(scalacOptions in Test).value.mkString(",")}""",
-  s"""-Dpcplod.classpath=${(fullClasspath in Test).value.map(_.data).mkString(",")}"""
-)
+// libraryDependencies += "org.ensime" %% "pcplod" % "1.2.1" % Test
+// javaOptions in Test ++= Seq(
+//   s"""-Dpcplod.settings=${(scalacOptions in Test).value.mkString(",")}""",
+//   s"""-Dpcplod.classpath=${(fullClasspath in Test).value.map(_.data).mkString(",")}"""
+// )
 
 def scala210ExtraDeps = Seq(
   compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
