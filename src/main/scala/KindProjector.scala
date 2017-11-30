@@ -26,6 +26,7 @@ class KindRewriter(plugin: Plugin, val global: Global)
   val sp = new StringParser[global.type](global)
 
   val runsAfter = "parser" :: Nil
+  override val runsBefore = "namer" :: Nil
   val phaseName = "kind-projector"
 
   lazy val useAsciiNames: Boolean =
