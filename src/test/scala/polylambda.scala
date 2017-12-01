@@ -2,15 +2,18 @@ package d_m
 
 import org.junit.Test
 
-trait ~>[-F[_], +G[_]] {
-  def apply[A](x: F[A]): G[A]
-}
-trait ~>>[-F[_], +G[_]] {
-  def dingo[B](x: F[B]): G[B]
-}
 final case class Const[A, B](getConst: A)
 
 class PolyLambdas {
+
+  trait ~>[-F[_], +G[_]] {
+    def apply[A](x: F[A]): G[A]
+  }
+
+  trait ~>>[-F[_], +G[_]] {
+    def dingo[B](x: F[B]): G[B]
+  }
+
   type ToSelf[F[_]] = F ~> F
 
   val kf1 = Lambda[Option ~> Vector](_.toVector)

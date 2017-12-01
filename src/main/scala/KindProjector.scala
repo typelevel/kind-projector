@@ -16,9 +16,27 @@ class KindProjector(val global: Global) extends Plugin {
   val name = "kind-projector"
   val description = "Expand type lambda syntax"
   val components = new KindRewriter(this, global) :: Nil
+
+  var enableForall = false
+
+  override def processOptions(options: List[String], error: String => Unit): Unit = {
+
+    // enable ∀ rewrites if "forall=true" is present
+    val (forallOpts, rest) = options partition { _.split("=")(0) == "forall" }
+    enableForall = forallOpts.lastOption match {
+      case Some(opt) =>
+        opt.split("=").tail match {
+          case Array("true") => true
+          case _ => false
+        }
+      case None => false
+    }
+
+    if(rest.nonEmpty) error(s"Unrecognized ${name} options: ${rest.mkString}")
+  }
 }
 
-class KindRewriter(plugin: Plugin, val global: Global)
+class KindRewriter(plugin: KindProjector, val global: Global)
     extends PluginComponent with Transform with TypingTransformers with TreeDSL {
 
   import global._
@@ -129,7 +147,60 @@ class KindRewriter(plugin: Plugin, val global: Global)
     def makeTypeParamContra(name: Name, bounds: TypeBoundsTree = DefaultBounds): TypeDef =
       TypeDef(Modifiers(PARAM | CONTRAVARIANT), makeTypeName(name), Nil, bounds)
 
-    def polyLambda(tree: Tree): Tree = tree match {
+    // Given a name, e.g. A or `+A` or `A <: Foo`, build a type
+    // parameter tree using the given name, bounds, variance, etc.
+    def makeTypeParamFromName(ident: Ident): TypeDef = {
+      val decoded = NameTransformer.decode(ident.name.toString)
+      val src = s"type _X_[$decoded] = Unit"
+      sp.parse(src) match {
+        case Some(TypeDef(_, _, List(tpe), _)) => tpe.duplicate
+        case None => reporter.error(ident.pos, s"Can't parse param: ${ident.name}"); null
+      }
+    }
+
+    // Like makeTypeParam, but can be used recursively in the case of types
+    // that are themselves parameterized.
+    def makeComplexTypeParam(t: Tree): TypeDef = t match {
+      case id @ Ident(_) =>
+        makeTypeParamFromName(id)
+
+      case AppliedTypeTree(Ident(name), ps) =>
+        val tparams = ps.map(makeComplexTypeParam)
+        TypeDef(Modifiers(PARAM), makeTypeName(name), tparams, DefaultBounds)
+
+      case ExistentialTypeTree(AppliedTypeTree(Ident(name), ps), _) =>
+        val tparams = ps.map(makeComplexTypeParam)
+        TypeDef(Modifiers(PARAM), makeTypeName(name), tparams, DefaultBounds)
+
+      case x =>
+        reporter.error(x.pos, "Can't parse %s (%s)" format (x, x.getClass.getName))
+        null.asInstanceOf[TypeDef]
+    }
+
+    def typeArgsToTypeParams(args: List[Tree]): List[TypeDef] = args.map {
+      case id @ Ident(_) =>
+        makeTypeParamFromName(id)
+
+      case AppliedTypeTree(Ident(Plus), Ident(name) :: Nil) =>
+        makeTypeParamCo(name)
+
+      case AppliedTypeTree(Ident(Minus), Ident(name) :: Nil) =>
+        makeTypeParamContra(name)
+
+      case AppliedTypeTree(Ident(name), ps) =>
+        val tparams = ps.map(makeComplexTypeParam)
+        TypeDef(Modifiers(PARAM), makeTypeName(name), tparams, DefaultBounds)
+
+      case ExistentialTypeTree(AppliedTypeTree(Ident(name), ps), _) =>
+        val tparams = ps.map(makeComplexTypeParam)
+        TypeDef(Modifiers(PARAM), makeTypeName(name), tparams, DefaultBounds)
+
+      case x =>
+        reporter.error(x.pos, "Can't parse %s (%s)" format (x, x.getClass.getName))
+        null.asInstanceOf[TypeDef]
+    }
+
+    def polyTerm(tree: Tree): Tree = tree match {
       case PolyLambda(methodName, (arrowType @ UnappliedType(_ :: targs)) :: Nil, Function1Tree(name, body)) =>
         val (f, g) = targs match {
           case a :: b :: Nil => (a, b)
@@ -140,41 +211,20 @@ class KindRewriter(plugin: Plugin, val global: Global)
         atPos(tree.pos.makeTransparent)(
           q"new $arrowType { def $methodName[$TParam]($name: $f[$TParam]): $g[$TParam] = $body }"
         )
+      case PolyVal(targetType, methodName, tArgs, body) if plugin.enableForall =>
+        atPos(tree.pos.makeTransparent)(tArgs match {
+          case Nil =>
+            val tParam = newTypeName(freshName("A"))
+            q"new $targetType { def $methodName[$tParam] = $body }"
+          case _ =>
+            val tParams = typeArgsToTypeParams(tArgs)
+            q"new $targetType { def $methodName[..$tParams] = $body }"
+        })
       case _ => tree
     }
 
     // The transform method -- this is where the magic happens.
     override def transform(tree: Tree): Tree = {
-
-      // Given a name, e.g. A or `+A` or `A <: Foo`, build a type
-      // parameter tree using the given name, bounds, variance, etc.
-      def makeTypeParamFromName(name: Name): TypeDef = {
-        val decoded = NameTransformer.decode(name.toString)
-        val src = s"type _X_[$decoded] = Unit"
-        sp.parse(src) match {
-          case Some(TypeDef(_, _, List(tpe), _)) => tpe
-          case None => reporter.error(tree.pos, s"Can't parse param: $name"); null
-        }
-      }
-
-      // Like makeTypeParam, but can be used recursively in the case of types
-      // that are themselves parameterized.
-      def makeComplexTypeParam(t: Tree): TypeDef = t match {
-        case Ident(name) =>
-          makeTypeParamFromName(name)
-
-        case AppliedTypeTree(Ident(name), ps) =>
-          val tparams = ps.map(makeComplexTypeParam)
-          TypeDef(Modifiers(PARAM), makeTypeName(name), tparams, DefaultBounds)
-
-        case ExistentialTypeTree(AppliedTypeTree(Ident(name), ps), _) =>
-          val tparams = ps.map(makeComplexTypeParam)
-          TypeDef(Modifiers(PARAM), makeTypeName(name), tparams, DefaultBounds)
-
-        case x =>
-          reporter.error(x.pos, "Can't parse %s (%s)" format (x, x.getClass.getName))
-          null.asInstanceOf[TypeDef]
-      }
 
       // Given the list a::as, this method finds the last argument in the list
       // (the "subtree") and returns that separately from the other arguments.
@@ -206,28 +256,7 @@ class KindRewriter(plugin: Plugin, val global: Global)
       // Lambda[(A, B) => Function2[A, Int, B]] case.
       def handleLambda(a: Tree, as: List[Tree]): Tree = {
         val (args, subtree) = parseLambda(a, as, Nil)
-        val innerTypes = args.map {
-          case Ident(name) =>
-            makeTypeParamFromName(name)
-
-          case AppliedTypeTree(Ident(Plus), Ident(name) :: Nil) =>
-            makeTypeParamCo(name)
-
-          case AppliedTypeTree(Ident(Minus), Ident(name) :: Nil) =>
-            makeTypeParamContra(name)
-
-          case AppliedTypeTree(Ident(name), ps) =>
-            val tparams = ps.map(makeComplexTypeParam)
-            TypeDef(Modifiers(PARAM), makeTypeName(name), tparams, DefaultBounds)
-
-          case ExistentialTypeTree(AppliedTypeTree(Ident(name), ps), _) =>
-            val tparams = ps.map(makeComplexTypeParam)
-            TypeDef(Modifiers(PARAM), makeTypeName(name), tparams, DefaultBounds)
-
-          case x =>
-            reporter.error(x.pos, "Can't parse %s (%s)" format (x, x.getClass.getName))
-            null.asInstanceOf[TypeDef]
-        }
+        val innerTypes = typeArgsToTypeParams(args)
         makeTypeProjection(innerTypes, subtree)
       }
 
@@ -323,7 +352,7 @@ class KindRewriter(plugin: Plugin, val global: Global)
       // given a tree, see if it could possibly be a type lambda
       // (either placeholder syntax or lambda syntax). if so, handle
       // it, and if not, transform it in the normal way.
-      val result = polyLambda(tree match {
+      val result = polyTerm(tree match {
 
         // Lambda[A => Either[A, Int]] case.
         case AppliedTypeTree(Ident(TypeLambda1), AppliedTypeTree(target, a :: as) :: Nil) =>

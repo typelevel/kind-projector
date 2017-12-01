@@ -41,4 +41,41 @@ trait Extractors {
       case _                                                            => None
     }
   }
+  object TermLambda {
+    private val LambdaName = newTermName("Λ")
+
+    def unapply(tree: Tree): Option[(List[Tree], Tree)] = tree match {
+      case Apply(TypeApply(Ident(name), tParams), body :: Nil) if name == LambdaName => Some((tParams, body))
+      case _                                                                         => None
+    }
+  }
+  object TermNuType {
+    private val NuName = newTermName("ν")
+
+    def unapply(tree: Tree): Option[Tree] = tree match {
+      case TypeApply(Ident(name), tpe :: Nil) if name == NuName => Some(tpe)
+      case _                                                    => None
+    }
+  }
+  object PolyVal {
+    def unapply(tree: Tree): Option[(Tree, TermName, List[Tree], Tree)] = tree match {
+
+      // Λ[A, B, ...](e) : T
+      case Typed(TermLambda(tParams, body), tpe)                                   => Some((tpe, nme.apply, tParams, body))
+
+      // ν[T].method[A, B, ...](e)
+      case Apply(TypeApply(Select(TermNuType(tpe), method), tParams), body :: Nil) => Some((tpe, method.toTermName, tParams, body))
+
+      // ν[T][A, B, ...](e)
+      case Apply(TypeApply(TermNuType(tpe), tParams), body :: Nil)                 => Some((tpe, nme.apply, tParams, body))
+
+      // ν[T].method(e)
+      case Apply(Select(TermNuType(tpe), method), body :: Nil)                     => Some((tpe, method.toTermName, Nil, body))
+
+      // ν[T](e)
+      case Apply(TermNuType(tpe), body :: Nil)                                     => Some((tpe, nme.apply, Nil, body))
+
+      case _                                                                       => None
+    }
+  }
 }
