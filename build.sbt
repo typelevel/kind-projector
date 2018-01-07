@@ -3,8 +3,8 @@ organization := "org.spire-math"
 licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
 homepage := Some(url("http://github.com/non/kind-projector"))
 
-scalaVersion := "2.11.11"
-crossScalaVersions := Seq("2.10.6", "2.11.11", "2.12.2", "2.13.0-M2")
+scalaVersion := "2.12.4"
+crossScalaVersions := Seq("2.10.7", "2.11.12", "2.12.4", "2.13.0-M2")
 
 libraryDependencies += scalaOrganization.value % "scala-compiler" % scalaVersion.value
 libraryDependencies ++= (scalaBinaryVersion.value match {
@@ -81,6 +81,11 @@ pomExtra := (
       <name>Erik Osheim</name>
       <url>http://github.com/non/</url>
     </developer>
+    <developer>
+      <id>tomasmikula</id>
+      <name>Tomas Mikula</name>
+      <url>http://github.com/tomasmikula/</url>
+    </developer>
   </developers>
 )
 
@@ -95,5 +100,5 @@ releaseProcess := Seq[ReleaseStep](
   publishArtifacts,
   setNextVersion,
   commitNextVersion,
-  ReleaseStep(action = Command.process("sonatypeReleaseAll", _)),
+  releaseStepCommand("sonatypeReleaseAll"),
   pushChanges)
