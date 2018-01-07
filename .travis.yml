@@ -4,12 +4,17 @@ language: scala
 
 scala:
 - 2.10.6
-- 2.11.11
-- 2.12.2
-- 2.13.0-M1
+- 2.11.12
+- 2.12.4
+- 2.13.0-M2
 
 jdk:
 - oraclejdk8
+
+cache:
+  directories:
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt
 
 script:
  - sbt ++${TRAVIS_SCALA_VERSION} clean test
@@ -18,8 +23,7 @@ script:
  - find $HOME/.sbt -name "*.lock" -delete
  - find $HOME/.ivy2 -name "ivydata-*.properties" -delete
 
-cache:
-  directories:
-    - $HOME/.ivy2/cache
-    - $HOME/.sbt/boot
-    - $HOME/.sbt/launchers/0.13.13
+before_cache:
+  # Cleanup the cached directories to avoid unnecessary cache updates
+  - find $HOME/.ivy2/cache -name "ivydata-*.properties" -print -delete
+  - find $HOME/.sbt        -name "*.lock"               -print -delete
