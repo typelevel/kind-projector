@@ -90,7 +90,7 @@ class KindRewriter(plugin: Plugin, val global: Global)
      * a number appended.
      */
     def newParamName(i: Int): TypeName = {
-      require(i >= 0)
+      require(i >= 0, s"negative param name index $i")
       val name = {
         if (useAsciiNames) {
           "X_kp%d".format(i) + "$"
