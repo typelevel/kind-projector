@@ -16,3 +16,9 @@ TAGS
 *~
 .#*
 .lib
+
+# Intellij-IDEA specific
+.idea
+*.iml
+*.ipr
+*.iws
