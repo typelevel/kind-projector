@@ -3,8 +3,8 @@ organization := "org.spire-math"
 licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
 homepage := Some(url("http://github.com/non/kind-projector"))
 
-scalaVersion := "2.12.4"
-crossScalaVersions := Seq("2.10.7", "2.11.12", "2.12.4", "2.13.0-M3")
+scalaVersion := "2.12.6"
+crossScalaVersions := Seq("2.10.7", "2.11.12", "2.12.6", "2.13.0-M3")
 
 libraryDependencies += scalaOrganization.value % "scala-compiler" % scalaVersion.value
 libraryDependencies ++= (scalaBinaryVersion.value match {
