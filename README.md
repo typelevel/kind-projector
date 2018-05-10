@@ -322,7 +322,7 @@ It's possible to nest this syntax. Here's an example taken from
 of using nested polymorphic lambdas to remove boilerplate:
 
 ```scala
-// without polymorphic lambas, as in the slide
+// without polymorphic lambdas, as in the slide
 def injectFC[F[_], G[_]](implicit I: Inject[F, G]) =
   new (FreeC[F, ?] ~> FreeC[G, ?]) {
     def apply[A](fa: FreeC[F, A]): FreeC[G, A] =
@@ -333,7 +333,7 @@ def injectFC[F[_], G[_]](implicit I: Inject[F, G]) =
       )
   }
 
-// with polymorphic lambas
+// with polymorphic lambdas
 def injectFC[F[_], G[_]](implicit I: Inject[F, G]) =
   λ[FreeC[F, ?] ~> FreeC[G, ?]](
     _.mapSuspension(λ[Coyoneda[F, ?] ~> Coyoneda[G, ?]](_.trans(I)))
