@@ -1,5 +1,7 @@
 ## Kind Projector
 
+[![Build Status](https://travis-ci.org/non/kind-projector.svg?branch=master)](https://travis-ci.org/non/kind-projector)
+
 ### Dedication
 
 > "But I don't want to go among mad people," Alice remarked.
