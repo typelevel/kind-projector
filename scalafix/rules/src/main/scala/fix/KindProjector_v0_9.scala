@@ -47,25 +47,40 @@ final case class KindProjector_v0_9(index: SemanticdbIndex)
     def rewriteTypeApply(tp: Type.Project, tparams: List[Type.Param], ta: Type.Apply): Patch = {
       val Type.Apply(tpe, args) = ta
 
-      // If each type parameter (tparams) is only used once in the body and in the same order
-      // Then inline syntax, with '?' placeholder, can be used.
-
-      val tparamNames = tparams map (_.name.value)
       val tparamMap = tparams.map(tparam => tparam.name.value -> tparam).toMap
 
-      def extractTypeParamNames(tpe: Type): List[String] = tpe match {
-        case Type.Name(name)     =>
-          tparamMap get name match {
-            case None         => Nil
-            case Some(tparam) => if (tparam.tparams.isEmpty) List(name) else Nil
-          }
-        case Type.Apply(_, args) => args flatMap extractTypeParamNames
-        case _                   => Nil
+      // If each type parameter (tparams) is only used once in the body and in the same order
+      // Then inline syntax, with '?' placeholder, can be used.
+      val canUseInlineSyntax = {
+        println()
+        println(s"tparams: $tparams")
+        println(s"args: $args")
+
+        val tparamNames = tparams map (_.name.value)
+
+        def getTypeParamNames(tpe: Type): List[String] = tpe match {
+          case Type.Name(name)       =>
+            tparamMap get name match {
+              case None        => Nil
+              case Some(value) => println(s"tparam found: $value"); List(name)
+            }
+            // if (tparamMap contains name) List(name) else Nil
+          case t @ Type.Apply(tpe, args) =>
+            println(s"Digging deeper on $t")
+            args flatMap getTypeParamNames
+//            Nil // getTypeParamNames(tpe) // ++
+          case _                     => Nil
+        }
+
+        val tparamNamesInArgs = args flatMap getTypeParamNames
+
+        println(s"tparamNamesInArgs: " + tparamNamesInArgs)
+        println(s"tparamNames: " + tparamNames)
+
+        val canUseInlineSyntax = tparamNamesInArgs sameElements tparamNames
+        println(s"canUseInlineSyntax: " + canUseInlineSyntax)
+        canUseInlineSyntax
       }
-
-      val tparamNamesInArgs = args flatMap extractTypeParamNames
-
-      val canUseInlineSyntax = tparamNamesInArgs sameElements tparamNames
 
       def inlineSyntax = {
         val args2 = args map {
@@ -73,10 +88,14 @@ final case class KindProjector_v0_9(index: SemanticdbIndex)
             tparamMap get name match {
               case None         => arg
               case Some(tparam) =>
+                val tparams = tparam.tparams match {
+                  case Nil     => ""
+                  case tparams => tparams map (_.syntax) mkString("[", ", ", "]")
+                }
                 tparamVariance(tparam) match {
-                  case Variance.Invariant     => Type.Name("?")
-                  case Variance.Covariant     => Type.Name("+?")
-                  case Variance.Contravariant => Type.Name("-?")
+                  case Variance.Invariant     => Type.Name(s"?$tparams")
+                  case Variance.Covariant     => Type.Name(s"+?$tparams")
+                  case Variance.Contravariant => Type.Name(s"-?$tparams")
                 }
             }
           case arg                   => arg
