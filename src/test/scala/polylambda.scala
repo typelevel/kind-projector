@@ -24,9 +24,9 @@ class PolyLambdas {
 
   val kf4 = λ[Option ~>> Option].dingo(_ flatMap (_ => None))
 
-  val kf5 = λ[Map[?, Int] ~> Map[?, Long]](_.mapValues(_.toLong).toMap)
+  val kf5 = λ[Map[?, Int] ~> Map[?, Long]](_.map { case (k, v) => (k, v.toLong) }.toMap)
 
-  val kf6 = λ[ToSelf[Map[?, Int]]](_.mapValues(_ * 2).toMap)
+  val kf6 = λ[ToSelf[Map[?, Int]]](_.map { case (k, v) => (k, v * 2) }.toMap)
 
   implicit class FGOps[F[_], A](x: F[A]) {
     def ntMap[G[_]](kf: F ~> G): G[A] = kf(x)
