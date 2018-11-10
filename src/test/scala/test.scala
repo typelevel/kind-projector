@@ -51,6 +51,9 @@ object Test {
   vex[Lambda[A[_[C]] => Unit]]
   vex[Lambda[A[B[C]] => Unit]]
 
+  trait FunctorK[F[_[_]]]
+  vex[FunctorK[?[_[_]]]]
+
   def hex[T[_[_[_[_]]]]] = ()
   hex[({type L[A[_[_[_]]]] = Unit})#L]
   hex[Lambda[A[_[_[_]]] => Unit]]
