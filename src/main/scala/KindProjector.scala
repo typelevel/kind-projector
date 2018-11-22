@@ -243,6 +243,8 @@ class KindRewriter(plugin: Plugin, val global: Global)
             (Ident(newParamName(i)), Some(Right(CoPlaceholder)))
           case (Ident(ContraPlaceholder), i) =>
             (Ident(newParamName(i)), Some(Right(ContraPlaceholder)))
+          case (AppliedTypeTree(Ident(Placeholder), ps), i) =>
+            (Ident(newParamName(i)), Some(Left(ps.map(makeComplexTypeParam))))
           case (ExistentialTypeTree(AppliedTypeTree(Ident(Placeholder), ps), _), i) =>
             (Ident(newParamName(i)), Some(Left(ps.map(makeComplexTypeParam))))
           case (a, i) =>
