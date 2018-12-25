@@ -72,6 +72,7 @@ libraryDependencies ++= (scalaBinaryVersion.value match {
     Nil
 })
 ```
+_Note_: for multi-project builds - put `addCompilerPlugin` clause into settings section for each sub-project.  
 
 For maven projects, add the plugin to the configuration of the
 maven-scala-plugin (remember to use `_2.10`, `_2.11` or
