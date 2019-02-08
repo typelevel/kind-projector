@@ -43,15 +43,29 @@ class KindRewriter(plugin: Plugin, val global: Global)
     // using kp with hlists was too costly.
     val treeCache = mutable.Map.empty[Tree, Tree]
 
+    sealed abstract class Variance(val modifiers: Int)
+    case object Invariant extends Variance(0)
+    case object Covariant extends Variance(COVARIANT)
+    case object Contravariant extends Variance(CONTRAVARIANT)
+
     // Reserve some names
     val TypeLambda1 = newTypeName("Lambda")
     val TypeLambda2 = newTypeName("λ")
-    val Placeholder = newTypeName("$qmark")
+    val InvPlaceholder = newTypeName("$qmark")
     val CoPlaceholder = newTypeName("$plus$qmark")
     val ContraPlaceholder = newTypeName("$minus$qmark")
 
     val TermLambda1 = TypeLambda1.toTermName
     val TermLambda2 = TypeLambda2.toTermName
+
+    object Placeholder {
+      def unapply(name: TypeName): Option[Variance] = name match {
+        case InvPlaceholder => Some(Invariant)
+        case CoPlaceholder => Some(Covariant)
+        case ContraPlaceholder => Some(Contravariant)
+        case _ => None
+      }
+    }
 
     // the name to use for the type lambda itself.
     // e.g. the L in ({ type L[x] = Either[x, Int] })#L.
@@ -116,18 +130,8 @@ class KindRewriter(plugin: Plugin, val global: Global)
 
     // We use this to create type parameters inside our type project, e.g.
     // the A in: ({type L[A] = (A, Int) => A})#L.
-    def makeTypeParam(name: Name, bounds: TypeBoundsTree = DefaultBounds): TypeDef =
-      TypeDef(Modifiers(PARAM), makeTypeName(name), Nil, bounds)
-
-    // Like makeTypeParam but with covariance, e.g.
-    // ({type L[+A] = ... })#L.
-    def makeTypeParamCo(name: Name, bounds: TypeBoundsTree = DefaultBounds): TypeDef =
-      TypeDef(Modifiers(PARAM | COVARIANT), makeTypeName(name), Nil, bounds)
-
-    // Like makeTypeParam but with contravariance, e.g.
-    // ({type L[-A] = ... })#L.
-    def makeTypeParamContra(name: Name, bounds: TypeBoundsTree = DefaultBounds): TypeDef =
-      TypeDef(Modifiers(PARAM | CONTRAVARIANT), makeTypeName(name), Nil, bounds)
+    def makeTypeParam(name: Name, variance: Variance, bounds: TypeBoundsTree = DefaultBounds): TypeDef =
+      TypeDef(Modifiers(PARAM | variance.modifiers), makeTypeName(name), Nil, bounds)
 
     def polyLambda(tree: Tree): Tree = tree match {
       case PolyLambda(methodName, (arrowType @ UnappliedType(_ :: targs)) :: Nil, Function1Tree(name, body)) =>
@@ -211,10 +215,10 @@ class KindRewriter(plugin: Plugin, val global: Global)
             makeTypeParamFromName(name)
 
           case AppliedTypeTree(Ident(Plus), Ident(name) :: Nil) =>
-            makeTypeParamCo(name)
+            makeTypeParam(name, Covariant)
 
           case AppliedTypeTree(Ident(Minus), Ident(name) :: Nil) =>
-            makeTypeParamContra(name)
+            makeTypeParam(name, Contravariant)
 
           case AppliedTypeTree(Ident(name), ps) =>
             val tparams = ps.map(makeComplexTypeParam)
@@ -237,30 +241,22 @@ class KindRewriter(plugin: Plugin, val global: Global)
         // create a new type argument list, catching placeholders and create
         // individual identifiers for them.
         val xyz = as.zipWithIndex.map {
-          case (Ident(Placeholder), i) =>
-            (Ident(newParamName(i)), Some(Right(Placeholder)))
-          case (Ident(CoPlaceholder), i) =>
-            (Ident(newParamName(i)), Some(Right(CoPlaceholder)))
-          case (Ident(ContraPlaceholder), i) =>
-            (Ident(newParamName(i)), Some(Right(ContraPlaceholder)))
-          case (AppliedTypeTree(Ident(Placeholder), ps), i) =>
-            (Ident(newParamName(i)), Some(Left(ps.map(makeComplexTypeParam))))
-          case (ExistentialTypeTree(AppliedTypeTree(Ident(Placeholder), ps), _), i) =>
-            (Ident(newParamName(i)), Some(Left(ps.map(makeComplexTypeParam))))
+          case (Ident(Placeholder(variance)), i) =>
+            (Ident(newParamName(i)), Some(Right(variance)))
+          case (AppliedTypeTree(Ident(Placeholder(variance)), ps), i) =>
+            (Ident(newParamName(i)), Some(Left((variance, ps.map(makeComplexTypeParam)))))
+          case (ExistentialTypeTree(AppliedTypeTree(Ident(Placeholder(variance)), ps), _), i) =>
+            (Ident(newParamName(i)), Some(Left((variance, ps.map(makeComplexTypeParam)))))
           case (a, i) =>
             (super.transform(a), None)
         }
 
         // for each placeholder, create a type parameter
         val innerTypes = xyz.collect {
-          case (Ident(name), Some(Right(Placeholder))) =>
-            makeTypeParam(name)
-          case (Ident(name), Some(Right(CoPlaceholder))) =>
-            makeTypeParamCo(name)
-          case (Ident(name), Some(Right(ContraPlaceholder))) =>
-            makeTypeParamContra(name)
-          case (Ident(name), Some(Left(tparams))) =>
-            TypeDef(Modifiers(PARAM), makeTypeName(name), tparams, DefaultBounds)
+          case (Ident(name), Some(Right(variance))) =>
+            makeTypeParam(name, variance)
+          case (Ident(name), Some(Left((variance, tparams)))) =>
+            TypeDef(Modifiers(PARAM | variance.modifiers), makeTypeName(name), tparams, DefaultBounds)
         }
 
         val args = xyz.map(_._1)

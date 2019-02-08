@@ -71,4 +71,13 @@ object Test {
   bux[Function2[-?, Int, +?]]
   bux[Lambda[(`-A`, `+B`) => Function2[A, Int, B]]]
   bux[Lambda[(-[A], +[B]) => Function2[A, Int, B]]]
+
+  // higher-kinded variance
+  trait ~>[-F[_], +G[_]]
+  def tux[T[-F[_]]] = ()
+  def hux[T[+G[_]]] = ()
+  tux[~>[-?[_], Option]]
+  hux[~>[Option, +?[_]]]
+  tux[Lambda[`-F[_]` => ~>[F, Option]]]
+  hux[Lambda[`+G[_]` => ~>[Option, G]]]
 }
