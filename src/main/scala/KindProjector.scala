@@ -51,18 +51,24 @@ class KindRewriter(plugin: Plugin, val global: Global)
     // Reserve some names
     val TypeLambda1 = newTypeName("Lambda")
     val TypeLambda2 = newTypeName("λ")
-    val InvPlaceholder = newTypeName("$qmark")
-    val CoPlaceholder = newTypeName("$plus$qmark")
-    val ContraPlaceholder = newTypeName("$minus$qmark")
+    object InvPlaceholder  {
+      def unapply(name: TypeName): Boolean = name == newTypeName("$qmark") || name == newTypeName("$times")
+    }
+    object CoPlaceholder {
+      def unapply(name: TypeName): Boolean = name == newTypeName("$plus$qmark") || name == newTypeName("$plus$times")
+    }
+    object ContraPlaceholder {
+      def unapply(name: TypeName): Boolean = name == newTypeName("$minus$qmark") || name == newTypeName("$minus$times")
+    }
 
     val TermLambda1 = TypeLambda1.toTermName
     val TermLambda2 = TypeLambda2.toTermName
 
     object Placeholder {
       def unapply(name: TypeName): Option[Variance] = name match {
-        case InvPlaceholder => Some(Invariant)
-        case CoPlaceholder => Some(Covariant)
-        case ContraPlaceholder => Some(Contravariant)
+        case InvPlaceholder() => Some(Invariant)
+        case CoPlaceholder() => Some(Covariant)
+        case ContraPlaceholder() => Some(Contravariant)
         case _ => None
       }
     }

@@ -16,6 +16,7 @@ object Test {
   // used to test the plugin
   bar[Either[Int, ?]]
   baz[Tuple3[Int, ?, ?]]
+  baz[Tuple3[*, Int, *]]
 
   // should not be changed by the plugin
   foo[Either[Int, Double]]
@@ -42,6 +43,7 @@ object Test {
   trait EitherT[F[_], A, B]
   qux[Functor[?[_]]]
   qux[EitherT[?[_], Int, Double]]
+  qux[EitherT[*[_], Int, Double]]
 
   // higher higher order
   def vex[T[_[_[_]]]] = ()
@@ -69,6 +71,7 @@ object Test {
   def bux[T[-_, +_]] = ()
   bux[({type L[-A, +B] = Function2[A, Int, B]})#L]
   bux[Function2[-?, Int, +?]]
+  bux[Function2[-*, Int, +*]]
   bux[Lambda[(`-A`, `+B`) => Function2[A, Int, B]]]
   bux[Lambda[(-[A], +[B]) => Function2[A, Int, B]]]
 
@@ -77,7 +80,9 @@ object Test {
   def tux[T[-F[_]]] = ()
   def hux[T[+G[_]]] = ()
   tux[~>[-?[_], Option]]
+  tux[~>[-*[_], Option]]
   hux[~>[Option, +?[_]]]
+  hux[~>[Option, +*[_]]]
   tux[Lambda[`-F[_]` => ~>[F, Option]]]
   hux[Lambda[`+G[_]` => ~>[Option, G]]]
 }
