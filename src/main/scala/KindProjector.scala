@@ -43,7 +43,7 @@ class KindRewriter(plugin: Plugin, val global: Global)
     // using kp with hlists was too costly.
     val treeCache = mutable.Map.empty[Tree, Tree]
 
-    sealed abstract class Variance(val modifiers: Int)
+    sealed abstract class Variance(val modifiers: Long)
     case object Invariant extends Variance(0)
     case object Covariant extends Variance(COVARIANT)
     case object Contravariant extends Variance(CONTRAVARIANT)
