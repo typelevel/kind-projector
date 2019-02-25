@@ -1,27 +1,22 @@
-sudo: false
-
 language: scala
 
 scala:
 - 2.10.7
 - 2.11.12
-- 2.12.6
-- 2.13.0-M4
+- 2.12.8
+- 2.13.0-M5
 
 jdk:
 - oraclejdk8
+- openjdk11
+
+script:
+ - sbt ++${TRAVIS_SCALA_VERSION} test
 
 cache:
   directories:
     - $HOME/.ivy2/cache
     - $HOME/.sbt
-
-script:
- - sbt ++${TRAVIS_SCALA_VERSION} clean test
-
- # Avoid unnecessary cache updates
- - find $HOME/.sbt -name "*.lock" -delete
- - find $HOME/.ivy2 -name "ivydata-*.properties" -delete
 
 before_cache:
   # Cleanup the cached directories to avoid unnecessary cache updates
