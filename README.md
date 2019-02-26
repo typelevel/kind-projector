@@ -535,6 +535,7 @@ The project's current maintainers are:
 
  * [Erik Osheim](http://github.com/non)
  * [Tomas Mikula](http://github.com/tomasmikula)
+ * [Seth Tisue](https://github.com/sethtisue)
 
 ### Copyright and License
 
@@ -542,4 +543,4 @@ All code is available to you under the MIT license, available at
 http://opensource.org/licenses/mit-license.php and also in the COPYING
 file.
 
-Copyright Erik Osheim, 2011-2017.
+Copyright Erik Osheim, 2011-2019.
