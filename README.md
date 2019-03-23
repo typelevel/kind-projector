@@ -31,11 +31,7 @@ type IntOrA[A] = Either[Int, A]
 
 Many people have wished for a better way to do this.
 
-The goal of this plugin is to add a syntax for type lambdas. We do
-this by rewriting syntactically valid programs into new programs,
-letting us seem to add new keywords to the language. This is achieved
-through a compiler plugin performing an (un-typed) tree
-transformation.
+The goal is to add a syntax for type lambdas. Rewriting syntactically valid programs into new programs which seems to add new keywords to the language. This is achieved through a compiler plugin performing an (un-typed) tree transformation.
 
 One problem with this approach is that it changes the meaning of
 (potentially) valid programs. In practice this means that you must
