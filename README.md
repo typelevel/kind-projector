@@ -540,6 +540,7 @@ The project's current maintainers are:
  * [Erik Osheim](http://github.com/non)
  * [Tomas Mikula](http://github.com/tomasmikula)
  * [Seth Tisue](https://github.com/sethtisue)
+ * [Miles Sabin](https://github.com/milessabin)
 
 ### Copyright and License
 
