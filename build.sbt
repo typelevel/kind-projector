@@ -1,7 +1,7 @@
 name := "kind-projector"
-organization := "org.spire-math"
+organization := "org.typelevel"
 licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
-homepage := Some(url("http://github.com/non/kind-projector"))
+homepage := Some(url("http://github.com/typelevel/kind-projector"))
 
 scalaVersion := "2.12.8"
 crossScalaVersions := Seq("2.10.7", "2.11.12", "2.12.8", "2.13.0-RC1")
@@ -72,8 +72,8 @@ publishTo := Some(if (isSnapshot.value) Opts.resolver.sonatypeSnapshots else Opt
 
 pomExtra := (
   <scm>
-    <url>git@github.com:non/kind-projector.git</url>
-    <connection>scm:git:git@github.com:non/kind-projector.git</connection>
+    <url>git@github.com:typelevel/kind-projector.git</url>
+    <connection>scm:git:git@github.com:typelevel/kind-projector.git</connection>
   </scm>
   <developers>
     <developer>
