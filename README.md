@@ -529,7 +529,11 @@ liability of any kind.
 If you are using kind-projector in one of your projects, please feel
 free to get in touch to report problems (or a lack of problems)!
 
-### Maintainers
+### Community
+
+People are expected to follow the
+[Scala Code of Conduct](https://scala-lang.org/conduct/)
+when discussing Kind-projector on GitHub or other venues.
 
 The project's current maintainers are:
 
