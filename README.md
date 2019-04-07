@@ -1,6 +1,6 @@
 ## Kind Projector
 
-[![Build Status](https://travis-ci.org/non/kind-projector.svg?branch=master)](https://travis-ci.org/non/kind-projector)
+[![Build Status](https://travis-ci.org/typelevel/kind-projector.svg?branch=master)](https://travis-ci.org/typelevel/kind-projector)
 
 ### Dedication
 
@@ -59,10 +59,10 @@ your `build.sbt` file:
 ```scala
 resolvers += Resolver.sonatypeRepo("releases")
 
-addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.10")
+addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.0")
 
 // if your project uses multiple Scala versions, use this for cross building
-addCompilerPlugin("org.spire-math" % "kind-projector" % "0.9.10" cross CrossVersion.binary)
+addCompilerPlugin("org.typelevel" % "kind-projector" % "0.10.0" cross CrossVersion.binary)
 
 // if your project uses both 2.10 and polymorphic lambdas
 libraryDependencies ++= (scalaBinaryVersion.value match {
@@ -85,7 +85,7 @@ maven-scala-plugin (remember to use `_2.10`, `_2.11` or
       <configuration>
         <compilerPlugins>
           <compilerPlugin>
-            <groupId>org.spire-math</groupId>
+            <groupId>org.typelevel</groupId>
             <artifactId>kind-projector_2.11</artifactId>
             <version>0.9.4</version>
           </compilerPlugin>
@@ -94,6 +94,9 @@ maven-scala-plugin (remember to use `_2.10`, `_2.11` or
     </plugin>
 
 That's it!
+
+Versions of the plugin earlier than 0.10.0 were released under a
+different organization (`org.spire-math`).
 
 Versions of the plugin earlier than 0.6.2 require a different
 resolver. For these earlier releases, use this:
