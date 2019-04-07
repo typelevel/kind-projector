@@ -86,8 +86,8 @@ maven-scala-plugin (remember to use `_2.10`, `_2.11` or
         <compilerPlugins>
           <compilerPlugin>
             <groupId>org.typelevel</groupId>
-            <artifactId>kind-projector_2.11</artifactId>
-            <version>0.9.4</version>
+            <artifactId>kind-projector_2.12</artifactId>
+            <version>0.10.0</version>
           </compilerPlugin>
         </compilerPlugins>
       </configuration>
