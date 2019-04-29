@@ -102,7 +102,7 @@ Versions of the plugin earlier than 0.6.2 require a different
 resolver. For these earlier releases, use this:
 
 ```scala
-resolvers += "bintray/non" at "http://dl.bintray.com/non/maven"
+resolvers += "bintray/non" at "https://dl.bintray.com/non/maven"
 ```
 
 ### Inline Syntax
