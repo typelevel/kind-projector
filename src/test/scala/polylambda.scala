@@ -13,7 +13,7 @@ final case class Const[A, B](getConst: A)
 class PolyLambdas {
   type ToSelf[F[_]] = F ~> F
 
-  val kf1 = Lambda[Option ~> Vector](_.toVector)
+  val kf1 = Lambda[Option ~> Vector](_.iterator.toVector)
 
   val kf2 = λ[Vector ~> Option] {
     case Vector(x) => Some(x)
