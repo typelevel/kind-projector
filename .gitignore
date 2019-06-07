@@ -16,4 +16,4 @@ TAGS
 *~
 .#*
 .lib
-project/usegpg.sbt
+usegpg.sbt
