@@ -4,7 +4,7 @@ licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
 homepage := Some(url("http://github.com/typelevel/kind-projector"))
 
 scalaVersion := "2.12.8"
-crossScalaVersions := Seq("2.10.7", "2.11.12", "2.12.8", "2.13.0-RC3")
+crossScalaVersions := Seq("2.10.7", "2.11.12", "2.12.8", "2.13.0")
 
 libraryDependencies += scalaOrganization.value % "scala-compiler" % scalaVersion.value
 libraryDependencies ++= (scalaBinaryVersion.value match {

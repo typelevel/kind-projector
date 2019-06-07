@@ -51,7 +51,7 @@ reserving those identifiers, then this compiler plugin is for you!
 
 ### Using the plugin
 
-Kind-projector supports Scala 2.10, 2.11, 2.12, and 2.13.0-RC2.
+Kind-projector supports Scala 2.10, 2.11, 2.12, and 2.13.
 
 To use this plugin in your own projects, add the following lines to
 your `build.sbt` file:
