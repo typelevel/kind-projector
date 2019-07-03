@@ -42,7 +42,7 @@ One problem with this approach is that it changes the meaning of
 avoid defining the following identifiers:
 
  1. `Lambda` and `λ`
- 2. `?`, `+?`, and `-?`
+ 2. `*`, `+*`, and `-*`
  4. `Λ$`
  5. `α$`, `β$`, ...
 
@@ -104,17 +104,17 @@ The simplest syntax to use is the inline syntax. This syntax resembles
 Scala's use of underscores to define anonymous functions like `_ + _`.
 
 Since underscore is used for existential types in Scala (and it is
-probably too late to change this syntax), we use `?` for the same
-purpose. We also use `+?` and `-?` to handle covariant and
+probably too late to change this syntax), we use `*` for the same
+purpose. We also use `+*` and `-*` to handle covariant and
 contravariant types parameters.
 
 Here are a few examples:
 
 ```scala
-Tuple2[?, Double]        // equivalent to: type R[A] = Tuple2[A, Double]
-Either[Int, +?]          // equivalent to: type R[+A] = Either[Int, A]
-Function2[-?, Long, +?]  // equivalent to: type R[-A, +B] = Function2[A, Long, B]
-EitherT[?[_], Int, ?]    // equivalent to: type R[F[_], B] = EitherT[F, Int, B]
+Tuple2[*, Double]        // equivalent to: type R[A] = Tuple2[A, Double]
+Either[Int, +*]          // equivalent to: type R[+A] = Either[Int, A]
+Function2[-*, Long, +*]  // equivalent to: type R[-A, +B] = Function2[A, Long, B]
+EitherT[*[_], Int, *]    // equivalent to: type R[F[_], B] = EitherT[F, Int, B]
 ```
 
 As you can see, this syntax works when each type parameter in the type
@@ -145,7 +145,7 @@ function syntax:
  * Plus/minus: `(+[A], +[B]) => Either[A, B]`
  * Backticks: ``(`+A`, `+B`) => Either[A, B]``
 
-(Note that unlike names like `?`, `+` and `-` do not have to be
+(Note that unlike names like `*`, `+` and `-` do not have to be
 reserved. They will only be interpreted this way when used in
 parameters to `Lambda[...]` types, which should never conflict with
 other usage.)
@@ -191,7 +191,7 @@ express.
 
 For example, imagine that we have `trait Functor[F[_]]`.
 
-You might want to write `Functor[Future[List[?]]]`, expecting to get
+You might want to write `Functor[Future[List[*]]]`, expecting to get
 something like:
 
 ```scala
@@ -199,9 +199,9 @@ type X[a] = Future[List[a]]
 Functor[X]
 ```
 
-However, `?` always binds at the tightest level, meaning that
-`List[?]` is interpreted as `type X[a] = List[a]`, and that
-`Future[List[?]]` is invalid.
+However, `*` always binds at the tightest level, meaning that
+`List[*]` is interpreted as `type X[a] = List[a]`, and that
+`Future[List[*]]` is invalid.
 
 In these cases you should prefer the lambda syntax, which would be
 written as:
@@ -225,10 +225,10 @@ This section shows the exact code produced for a few type lambda
 expressions.
 
 ```scala
-Either[Int, ?]
+Either[Int, *]
 ({type Λ$[β$0$] = Either[Int, β$0$]})#Λ$
 
-Function2[-?, String, +?]
+Function2[-*, String, +*]
 ({type Λ$[-α$0$, +γ$0$] = Function2[α$0$, String, γ$0$]})#Λ$
 
 Lambda[A => (A, A)]
@@ -323,10 +323,10 @@ of using nested polymorphic lambdas to remove boilerplate:
 ```scala
 // without polymorphic lambdas, as in the slide
 def injectFC[F[_], G[_]](implicit I: Inject[F, G]) =
-  new (FreeC[F, ?] ~> FreeC[G, ?]) {
+  new (FreeC[F, *] ~> FreeC[G, *]) {
     def apply[A](fa: FreeC[F, A]): FreeC[G, A] =
-      fa.mapSuspension[Coyoneda[G, ?]](
-        new (Coyoneda[F, ?] ~> Coyoneda[G, ?]) {
+      fa.mapSuspension[Coyoneda[G, *]](
+        new (Coyoneda[F, *] ~> Coyoneda[G, *]) {
           def apply[B](fb: Coyoneda[F, B]): Coyoneda[G, B] = fb.trans(I)
         }
       )
@@ -334,8 +334,8 @@ def injectFC[F[_], G[_]](implicit I: Inject[F, G]) =
 
 // with polymorphic lambdas
 def injectFC[F[_], G[_]](implicit I: Inject[F, G]) =
-  λ[FreeC[F, ?] ~> FreeC[G, ?]](
-    _.mapSuspension(λ[Coyoneda[F, ?] ~> Coyoneda[G, ?]](_.trans(I)))
+  λ[FreeC[F, *] ~> FreeC[G, *]](
+    _.mapSuspension(λ[Coyoneda[F, *] ~> Coyoneda[G, *]](_.trans(I)))
   )
 ```
 
@@ -437,8 +437,8 @@ val g = new (Id ~> Option) {
   def run[A](x: Id[A]): Option[A] = Some(x)
 }
 
-val h = λ[Either[Unit, ?] Convert Option](_.fold(_ => None, a => Some(a)))
-val h = new Convert[Either[Unit, ?], Option] {
+val h = λ[Either[Unit, *] Convert Option](_.fold(_ => None, a => Some(a)))
+val h = new Convert[Either[Unit, *], Option] {
   def apply[A](x: Either[Unit, A]): Option[A] =
     x.fold(_ => None, a => Some(a))
 }
@@ -489,8 +489,8 @@ xyz[λ[`x[+_]` => Q[x, List]] // ok
 
 // but these don't work (although support for the second form
 // could be added in a future release).
-xyz[Q[?[+_], List]]          // invalid syntax
-xyz[Q[?[`+_`], List]]        // unsupported
+xyz[Q[*[+_], List]]          // invalid syntax
+xyz[Q[*[`+_`], List]]        // unsupported
 ```
 
 There have been suggestions for better syntax, like
@@ -504,7 +504,7 @@ Others have noted that it would be nicer to be able to use `_` for
 types the way we do for values, so that we could use `Either[Int, _]`
 to define a type lambda the way we use `3 + _` to define a
 function. Unfortunately, it's probably too late to modify the meaning
-of `_`, which is why we chose to use `?` instead.
+of `_`, which is why we chose to use `*` instead.
 
 ### Future Work
 

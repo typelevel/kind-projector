@@ -9,5 +9,5 @@ object KindProjectorWarnings {
 
   def f[G[_]]: Unit = ()
 
-  f[Foo[Bar[Int, ?], ?]] // shadowing warning
+  f[Foo[Bar[Int, *], *]] // shadowing warning
 }
