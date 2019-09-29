@@ -4,7 +4,7 @@ trait Functor[M[_]] {
   def fmap[A, B](fa: M[A])(f: A => B): M[B]
 }
 
-class EitherRightFunctor[L] extends Functor[Either[L, ?]] {
+class EitherRightFunctor[L] extends Functor[Either[L, *]] {
   def fmap[A, B](fa: Either[L, A])(f: A => B): Either[L, B] =
     fa match {
       case Right(a) => Right(f(a))

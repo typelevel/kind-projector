@@ -24,9 +24,9 @@ class PolyLambdas {
 
   val kf4 = λ[Option ~>> Option].dingo(_ flatMap (_ => None))
 
-  val kf5 = λ[Map[?, Int] ~> Map[?, Long]](_.map { case (k, v) => (k, v.toLong) }.toMap)
+  val kf5 = λ[Map[*, Int] ~> Map[*, Long]](_.map { case (k, v) => (k, v.toLong) }.toMap)
 
-  val kf6 = λ[ToSelf[Map[?, Int]]](_.map { case (k, v) => (k, v * 2) }.toMap)
+  val kf6 = λ[ToSelf[Map[*, Int]]](_.map { case (k, v) => (k, v * 2) }.toMap)
 
   implicit class FGOps[F[_], A](x: F[A]) {
     def ntMap[G[_]](kf: F ~> G): G[A] = kf(x)
@@ -40,12 +40,12 @@ class PolyLambdas {
   val tupleTakeFirst = λ[λ[A => (A, Int)] ~> List](x => List(x._1))
 
   // All these formulations should be equivalent.
-  def const1[A]                              = λ[ToSelf[Const[A, ?]]](x => x)
-  def const2[A] : ToSelf[Const[A, ?]]        = λ[Const[A, ?] ~> Const[A, ?]](x => x)
-  def const3[A] : Const[A, ?] ~> Const[A, ?] = λ[ToSelf[Const[A, ?]]](x => x)
-  def const4[A]                              = λ[Const[A, ?] ~> Const[A, ?]](x => x)
-  def const5[A] : ToSelf[Const[A, ?]]        = λ[ToSelf[λ[B => Const[A, B]]]](x => x)
-  def const6[A] : Const[A, ?] ~> Const[A, ?] = λ[ToSelf[λ[B => Const[A, B]]]](x => x)
+  def const1[A]                              = λ[ToSelf[Const[A, *]]](x => x)
+  def const2[A] : ToSelf[Const[A, *]]        = λ[Const[A, *] ~> Const[A, *]](x => x)
+  def const3[A] : Const[A, *] ~> Const[A, *] = λ[ToSelf[Const[A, *]]](x => x)
+  def const4[A]                              = λ[Const[A, *] ~> Const[A, *]](x => x)
+  def const5[A] : ToSelf[Const[A, *]]        = λ[ToSelf[λ[B => Const[A, B]]]](x => x)
+  def const6[A] : Const[A, *] ~> Const[A, *] = λ[ToSelf[λ[B => Const[A, B]]]](x => x)
 
   @Test
   def polylambda(): Unit = {

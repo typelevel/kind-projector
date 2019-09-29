@@ -31,8 +31,8 @@ object Main {
   }
   
   // using the plugin, this should be the same (but hopefully easier to read)
-  def KleisliSemigroupoid2[F[_]: FlatMap]: Semigroupoid[Kleisli[?, F, ?]] = {
-    new Semigroupoid[Kleisli[?, F, ?]] {
+  def KleisliSemigroupoid2[F[_]: FlatMap]: Semigroupoid[Kleisli[*, F, *]] = {
+    new Semigroupoid[Kleisli[*, F, *]] {
       def compose[A, B, C] = {
         f => g => Kleisli(a => FlatMap[F].flatMap(g.k)(f.k(a)))
       }
