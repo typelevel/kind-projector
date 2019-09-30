@@ -4,7 +4,6 @@ licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
 homepage := Some(url("http://github.com/typelevel/kind-projector"))
 
 scalaVersion := "2.12.8"
-crossScalaVersions := Seq("2.10.7", "2.11.12", "2.12.8", "2.12.9", "2.12.10", "2.13.0", "2.13.1")
 crossVersion := CrossVersion.full
 crossTarget := {
   // workaround for https://github.com/sbt/sbt/issues/5097
