@@ -54,16 +54,19 @@ reserving those identifiers, then this compiler plugin is for you!
 
 Kind-projector supports Scala 2.10, 2.11, 2.12, and 2.13.
 
+_Note_: as of version 0.11.0 the plugin is published against the full Scala version
+(see #15)
+
 To use this plugin in your own projects, add the following lines to
 your `build.sbt` file:
 
 ```scala
 resolvers += Resolver.sonatypeRepo("releases")
 
-addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3")
+addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.0" cross CrossVersion.full)
 
 // if your project uses multiple Scala versions, use this for cross building
-addCompilerPlugin("org.typelevel" % "kind-projector" % "0.10.3" cross CrossVersion.binary)
+addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.0" cross CrossVersion.full)
 
 // if your project uses both 2.10 and polymorphic lambdas
 libraryDependencies ++= (scalaBinaryVersion.value match {
@@ -76,8 +79,7 @@ libraryDependencies ++= (scalaBinaryVersion.value match {
 _Note_: for multi-project builds - put `addCompilerPlugin` clause into settings section for each sub-project.
 
 For maven projects, add the plugin to the configuration of the
-maven-scala-plugin (remember to use `_2.10`, `_2.11` or
-`_2.12` as appropriate):
+maven-scala-plugin (remember to use `_2.10.7`, `_2.11.12`, `_2.12.10` etc as appropriate):
 
     <plugin>
       <groupId>net.alchim31.maven</groupId>
@@ -87,8 +89,8 @@ maven-scala-plugin (remember to use `_2.10`, `_2.11` or
         <compilerPlugins>
           <compilerPlugin>
             <groupId>org.typelevel</groupId>
-            <artifactId>kind-projector_2.12</artifactId>
-            <version>0.10.1</version>
+            <artifactId>kind-projector_2.12.8</artifactId>
+            <version>0.11.0</version>
           </compilerPlugin>
         </compilerPlugins>
       </configuration>
