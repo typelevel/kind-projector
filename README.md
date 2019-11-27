@@ -61,8 +61,6 @@ To use this plugin in your own projects, add the following lines to
 your `build.sbt` file:
 
 ```scala
-resolvers += Resolver.sonatypeRepo("releases")
-
 addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.0" cross CrossVersion.full)
 
 // if your project uses multiple Scala versions, use this for cross building
