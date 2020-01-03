@@ -65,8 +65,8 @@ lazy val `kind-projector` = project
     libraryDependencies += scalaOrganization.value % "scala-compiler" % scalaVersion.value,
     libraryDependencies ++= (scalaBinaryVersion.value match {
       case "2.10" => List(
-        compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
-        "org.scalamacros" %% "quasiquotes" % "2.1.0"
+        compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
+        "org.scalamacros" %% "quasiquotes" % "2.1.1"
       )
       case _      => Nil
     }),
