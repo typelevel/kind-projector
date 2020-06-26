@@ -182,7 +182,7 @@ class KindRewriter(plugin: Plugin, val global: Global)
           TypeDef(Modifiers(PARAM), makeTypeName(name), tparams, DefaultBounds)
 
         case x =>
-          reporter.error(x.pos, "Can't parse %s (%s)" format (x, x.getClass.getName))
+          reporter.error(x.pos, "Can't parse %s (%s)".format(x, x.getClass.getName))
           null.asInstanceOf[TypeDef]
       }
 
@@ -235,7 +235,7 @@ class KindRewriter(plugin: Plugin, val global: Global)
             TypeDef(Modifiers(PARAM), makeTypeName(name), tparams, DefaultBounds)
 
           case x =>
-            reporter.error(x.pos, "Can't parse %s (%s)" format (x, x.getClass.getName))
+            reporter.error(x.pos, "Can't parse %s (%s)".format(x, x.getClass.getName))
             null.asInstanceOf[TypeDef]
         }
         makeTypeProjection(innerTypes, subtree)
