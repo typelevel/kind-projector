@@ -1,8 +1,0 @@
-pull_request_rules:
-  - name: automatic merge for scala-steward pull requests
-    conditions:
-      - author~=^scala-steward$
-      - base=master
-    actions:
-      merge:
-        method: merge
