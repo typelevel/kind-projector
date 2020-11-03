@@ -2,6 +2,16 @@ import ReleaseTransformations._
 
 inThisBuild {
   Seq(
+    githubWorkflowPublishTargetBranches := Seq(),
+    crossScalaVersions := Seq(
+      "2.10.7",
+      "2.11.12",
+      "2.12.8",
+      "2.12.9",
+      "2.12.10",
+      "2.13.0",
+      "2.13.1"
+    ),
     organization := "org.typelevel",
     licenses += ("MIT", url("http://opensource.org/licenses/MIT")),
     homepage := Some(url("http://github.com/typelevel/kind-projector")),
@@ -49,6 +59,7 @@ lazy val `kind-projector` = project
     name := "kind-projector",
     crossTarget := target.value / s"scala-${scalaVersion.value}", // workaround for https://github.com/sbt/sbt/issues/5097
     crossVersion := CrossVersion.full,
+    crossScalaVersions := (ThisBuild / crossScalaVersions).value,
     releaseCrossBuild := true,
     releasePublishArtifactsAction := PgpKeys.publishSigned.value,
     publishTo := Some(if (isSnapshot.value) Opts.resolver.sonatypeSnapshots else Opts.resolver.sonatypeStaging),
