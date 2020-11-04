@@ -2,6 +2,10 @@
 
 [![Build Status](https://travis-ci.org/typelevel/kind-projector.svg?branch=master)](https://travis-ci.org/typelevel/kind-projector)
 
+### Note on maintenance
+
+This project is only maintained for Scala 2.x. No new features are developed, but bug fix releases will still be made available. Dotty/Scala 3 has [built-in type lambda syntax](https://dotty.epfl.ch/docs/reference/new-types/type-lambdas-spec.html) and [kind-projector compatible syntax](https://dotty.epfl.ch/docs/reference/changed-features/wildcards.html).
+
 ### Dedication
 
 > "But I don't want to go among mad people," Alice remarked.
