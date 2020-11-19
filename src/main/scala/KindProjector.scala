@@ -163,7 +163,7 @@ class KindRewriter(plugin: Plugin, val global: Global)
         val src = s"type _X_[$decoded] = Unit"
         sp.parse(src) match {
           case Some(TypeDef(_, _, List(tpe), _)) => tpe
-          case None => reporter.error(tree.pos, s"Can't parse param: $name"); null
+          case _ => reporter.error(tree.pos, s"Can't parse param: $name"); null
         }
       }
 
