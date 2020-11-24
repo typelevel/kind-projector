@@ -65,10 +65,10 @@ To use this plugin in your own projects, add the following lines to
 your `build.sbt` file:
 
 ```scala
-addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.0" cross CrossVersion.full)
+addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.1" cross CrossVersion.full)
 
 // if your project uses multiple Scala versions, use this for cross building
-addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.0" cross CrossVersion.full)
+addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.1" cross CrossVersion.full)
 
 // if your project uses both 2.10 and polymorphic lambdas
 libraryDependencies ++= (scalaBinaryVersion.value match {
@@ -92,7 +92,7 @@ maven-scala-plugin (remember to use `_2.10.7`, `_2.11.12`, `_2.12.10` etc as app
           <compilerPlugin>
             <groupId>org.typelevel</groupId>
             <artifactId>kind-projector_2.12.8</artifactId>
-            <version>0.11.0</version>
+            <version>0.11.1</version>
           </compilerPlugin>
         </compilerPlugins>
       </configuration>
