@@ -87,13 +87,13 @@ lazy val `kind-projector` = project
       case _      => Nil
     }),
     scalacOptions ++= Seq(
-      "-Xfatal-warnings",
       "-Xlint",
       "-feature",
       "-language:higherKinds",
       "-deprecation",
-      "-unchecked"
+      "-unchecked",
     ),
+    Compile / compile / scalacOptions += "Xfatal-warnings",
     Test / scalacOptions ++= {
       val jar = (Compile / packageBin).value
       Seq(s"-Xplugin:${jar.getAbsolutePath}", s"-Jdummy=${jar.lastModified}") // ensures recompile
