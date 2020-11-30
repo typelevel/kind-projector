@@ -23,6 +23,18 @@ class KindRewriter(plugin: Plugin, val global: Global)
 
   import global._
 
+  trait NameDeprecation {
+    def reportAt(pos: Position): Unit
+  }
+  case class DeprecatedName(used: String, other: String) extends NameDeprecation {
+    def reportAt(pos: Position) = reporter.warning(pos,
+      "kind-projector ? placeholders are deprecated." +
+      s" Use $other instead of $used for cross-compatibility with Scala 3")
+  }
+  case object NotDeprecated extends NameDeprecation {
+    def reportAt(pos: Position): Unit = ()
+  }
+
   val sp = new StringParser[global.type](global)
 
   val runsAfter = "parser" :: Nil
@@ -60,16 +72,27 @@ class KindRewriter(plugin: Plugin, val global: Global)
     object ContraPlaceholder {
       def unapply(name: TypeName): Boolean = name == newTypeName("$minus$qmark") || name == newTypeName("$minus$times")
     }
+ 
+    def deprecationFor(name: TypeName): Option[(String, String)] =
+      if (name == newTypeName("$qmark")) Some("?" -> "*")
+      else if (name == newTypeName("$plus$qmark")) Some("+?" -> "+*")
+      else if (name == newTypeName("$minus$qmark")) Some("-?" -> "-*")
+      else None
 
     val TermLambda1 = TypeLambda1.toTermName
     val TermLambda2 = TypeLambda2.toTermName
 
     object Placeholder {
-      def unapply(name: TypeName): Option[Variance] = name match {
-        case InvPlaceholder() => Some(Invariant)
-        case CoPlaceholder() => Some(Covariant)
-        case ContraPlaceholder() => Some(Contravariant)
-        case _ => None
+      def unapply(name: TypeName): Option[(Variance, NameDeprecation)] = {
+        val depr = deprecationFor(name).map{
+          case (used, preferred) => DeprecatedName(used, preferred)
+        }.getOrElse(NotDeprecated)
+        name match {
+          case InvPlaceholder() => Some(Invariant -> depr)
+          case CoPlaceholder() => Some(Covariant -> depr)
+          case ContraPlaceholder() => Some(Contravariant -> depr)
+          case _ => None
+        }
       }
     }
 
@@ -247,11 +270,14 @@ class KindRewriter(plugin: Plugin, val global: Global)
         // create a new type argument list, catching placeholders and create
         // individual identifiers for them.
         val xyz = as.zipWithIndex.map {
-          case (Ident(Placeholder(variance)), i) =>
+          case (id @ Ident(Placeholder(variance, deprecation)), i) =>
+            deprecation.reportAt(id.pos)
             (Ident(newParamName(i)), Some(Right(variance)))
-          case (AppliedTypeTree(Ident(Placeholder(variance)), ps), i) =>
+          case (apl @ AppliedTypeTree(Ident(Placeholder(variance, deprecation)), ps), i) =>
+            deprecation.reportAt(apl.pos)
             (Ident(newParamName(i)), Some(Left((variance, ps.map(makeComplexTypeParam)))))
-          case (ExistentialTypeTree(AppliedTypeTree(Ident(Placeholder(variance)), ps), _), i) =>
+          case (xst @ ExistentialTypeTree(AppliedTypeTree(Ident(Placeholder(variance, deprecation)), ps), _), i) =>
+            deprecation.reportAt(xst.pos)
             (Ident(newParamName(i)), Some(Left((variance, ps.map(makeComplexTypeParam)))))
           case (a, i) =>
             (super.transform(a), None)
