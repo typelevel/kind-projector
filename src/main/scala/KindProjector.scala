@@ -27,7 +27,9 @@ class KindRewriter(plugin: Plugin, val global: Global)
     def reportAt(pos: Position): Unit
   }
   case class DeprecatedName(used: String, other: String) extends NameDeprecation {
-    def reportAt(pos: Position) = reporter.warning(pos, s"? syntax is deprecated. Use $other instead of $used")
+    def reportAt(pos: Position) = reporter.warning(pos,
+      "kind-projector ? placeholders are deprecated." +
+      s" Use $other instead of $used for cross-compatibility with Scala 3")
   }
   case object NotDeprecated extends NameDeprecation {
     def reportAt(pos: Position): Unit = ()
