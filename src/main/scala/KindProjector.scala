@@ -1,7 +1,7 @@
 package d_m
 
 import scala.tools.nsc
-import nsc.Global
+import nsc._
 import nsc.plugins.Plugin
 import nsc.plugins.PluginComponent
 import nsc.transform.Transform
@@ -19,21 +19,9 @@ class KindProjector(val global: Global) extends Plugin {
 }
 
 class KindRewriter(plugin: Plugin, val global: Global)
-    extends PluginComponent with Transform with TypingTransformers with TreeDSL {
+    extends PluginComponent with Transform with TypingTransformers with TreeDSL with ReportingCompat {
 
   import global._
-
-  trait NameDeprecation {
-    def reportAt(pos: Position): Unit
-  }
-  case class DeprecatedName(used: String, other: String) extends NameDeprecation {
-    def reportAt(pos: Position) = reporter.warning(pos,
-      "kind-projector ? placeholders are deprecated." +
-      s" Use $other instead of $used for cross-compatibility with Scala 3")
-  }
-  case object NotDeprecated extends NameDeprecation {
-    def reportAt(pos: Position): Unit = ()
-  }
 
   val sp = new StringParser[global.type](global)
 
@@ -82,15 +70,13 @@ class KindRewriter(plugin: Plugin, val global: Global)
     val TermLambda1 = TypeLambda1.toTermName
     val TermLambda2 = TypeLambda2.toTermName
 
-    object Placeholder {
-      def unapply(name: TypeName): Option[(Variance, NameDeprecation)] = {
-        val depr = deprecationFor(name).map{
-          case (used, preferred) => DeprecatedName(used, preferred)
-        }.getOrElse(NotDeprecated)
+    class Placeholder(deprecationReporter: (String, String) => Unit) {
+      def unapply(name: TypeName): Option[Variance] = {
+        for ((used, preferred) <- deprecationFor(name)) deprecationReporter(used, preferred)
         name match {
-          case InvPlaceholder() => Some(Invariant -> depr)
-          case CoPlaceholder() => Some(Covariant -> depr)
-          case ContraPlaceholder() => Some(Contravariant -> depr)
+          case InvPlaceholder() => Some(Invariant)
+          case CoPlaceholder() => Some(Covariant)
+          case ContraPlaceholder() => Some(Contravariant)
           case _ => None
         }
       }
@@ -269,15 +255,17 @@ class KindRewriter(plugin: Plugin, val global: Global)
       def handlePlaceholders(t: Tree, as: List[Tree]) = {
         // create a new type argument list, catching placeholders and create
         // individual identifiers for them.
+        val placeholder = new Placeholder((deprecatedName, preferredName) => {
+          val msg = "kind-projector ? placeholders are deprecated." +
+                   s" Use $preferredName instead of $deprecatedName for cross-compatibility with Scala 3"
+          global.runReporting.warning(t.pos, msg, Reporting.WarningCategory.Deprecation, t.symbol)
+        })
         val xyz = as.zipWithIndex.map {
-          case (id @ Ident(Placeholder(variance, deprecation)), i) =>
-            deprecation.reportAt(id.pos)
+          case (id @ Ident(placeholder(variance)), i) =>
             (Ident(newParamName(i)), Some(Right(variance)))
-          case (apl @ AppliedTypeTree(Ident(Placeholder(variance, deprecation)), ps), i) =>
-            deprecation.reportAt(apl.pos)
+          case (apl @ AppliedTypeTree(Ident(placeholder(variance)), ps), i) =>
             (Ident(newParamName(i)), Some(Left((variance, ps.map(makeComplexTypeParam)))))
-          case (xst @ ExistentialTypeTree(AppliedTypeTree(Ident(Placeholder(variance, deprecation)), ps), _), i) =>
-            deprecation.reportAt(xst.pos)
+          case (xst @ ExistentialTypeTree(AppliedTypeTree(Ident(placeholder(variance)), ps), _), i) =>
             (Ident(newParamName(i)), Some(Left((variance, ps.map(makeComplexTypeParam)))))
           case (a, i) =>
             (super.transform(a), None)

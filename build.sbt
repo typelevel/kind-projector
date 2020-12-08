@@ -58,6 +58,12 @@ inThisBuild {
   )
 }
 
+def parseScalaVersion(versionString: String) =
+  versionString.split('.').toList.map(str => scala.util.Try(str.toInt).toOption) match {
+    case List(Some(epoch), Some(major), Some(minor)) => Some((epoch, major, minor))
+    case _ => None
+  }
+
 lazy val `kind-projector` = project
   .in(file("."))
   .settings(
@@ -69,12 +75,15 @@ lazy val `kind-projector` = project
     releasePublishArtifactsAction := PgpKeys.publishSigned.value,
     publishTo := Some(if (isSnapshot.value) Opts.resolver.sonatypeSnapshots else Opts.resolver.sonatypeStaging),
     Compile / unmanagedSourceDirectories ++= {
-      (Compile / unmanagedSourceDirectories).value.map { dir =>
-        val sv = scalaVersion.value
-        val is130 = sv == "2.13.0" // use 2.12 version for 2.13.0, reporters changed in 2.13.1
-        CrossVersion.partialVersion(sv) match {
-          case Some((2, n)) if n < 13 || is130 => file(dir.getPath ++ "-2.12-")
-          case _                               => file(dir.getPath ++ "-2.13+")
+
+      (Compile / unmanagedSourceDirectories).value.flatMap { dir =>
+        val maxMinor = 6
+        parseScalaVersion(scalaVersion.value) match {
+          case Some((2, major, minor)) if major <= 12 || minor == 0 =>
+            (0 to maxMinor).map(max => file(s"${dir.getPath}-2.13.$max-"))
+          case Some((2, 13, n)) =>
+            (0 to n).map(min => file(s"${dir.getPath}-2.13.$min+")) ++ 
+            (n to maxMinor).map(max => file(s"${dir.getPath}-2.13.$max-"))
         }
       }
     },
@@ -93,12 +102,20 @@ lazy val `kind-projector` = project
       "-deprecation",
       "-unchecked",
     ),
-    Compile / compile / scalacOptions += "Xfatal-warnings",
+    Compile / compile / scalacOptions += "-Xfatal-warnings",
     Test / scalacOptions ++= {
       val jar = (Compile / packageBin).value
-      Seq(s"-Xplugin:${jar.getAbsolutePath}", s"-Jdummy=${jar.lastModified}") // ensures recompile
+      Seq("-Yrangepos", s"-Xplugin:${jar.getAbsolutePath}", s"-Jdummy=${jar.lastModified}") // ensures recompile
     },
-    Test / scalacOptions += "-Yrangepos",
+    Test / scalacOptions ++= (parseScalaVersion(scalaVersion.value) match {
+      case Some((2, 13, n)) if n >= 2 => List("-Wconf:src=WarningSuppression.scala:error")
+      case _                          => Nil
+    }),
+    Test / unmanagedSourceDirectories ++= (parseScalaVersion(scalaVersion.value) match {
+      case Some((2, 13, n)) if n >= 2 =>
+        (Test / unmanagedSourceDirectories).value.map(dir => file(dir.getPath ++ "-2.13.2+"))
+      case _                          => Nil
+    }),
     console / initialCommands := "import d_m._",
     Compile / console / scalacOptions := Seq("-language:_", "-Xplugin:" + (Compile / packageBin).value),
     Test / console / scalacOptions := (Compile / console / scalacOptions).value,
