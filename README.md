@@ -549,4 +549,4 @@ All code is available to you under the MIT license, available at
 http://opensource.org/licenses/mit-license.php and also in the COPYING
 file.
 
-Copyright Erik Osheim, 2011-2019.
+Copyright Erik Osheim, 2011-2021.
