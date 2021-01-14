@@ -2,6 +2,7 @@ import ReleaseTransformations._
 
 inThisBuild {
   Seq(
+    resolvers in Global += "scala-integration" at "https://scala-ci.typesafe.com/artifactory/scala-integration/",
     githubWorkflowPublishTargetBranches := Seq(),
     crossScalaVersions := Seq(
       "2.10.7",
@@ -59,6 +60,29 @@ inThisBuild {
   )
 }
 
+val HasScalaVersion = {
+  object Matcher {
+    def unapply(versionString: String) = 
+      versionString.takeWhile(ch => ch != '-').split('.').toList.map(str => scala.util.Try(str.toInt).toOption) match {
+        case List(Some(epoch), Some(major), Some(minor)) => Some((epoch, major, minor))
+        case _ => None
+      }
+  }
+  Matcher
+}
+
+def hasNewReporting(versionString: String) = versionString match {
+  case HasScalaVersion(2, 12, minor) => minor >= 13
+  case HasScalaVersion(2, 13, minor) => minor >= 2
+  case _ => false
+}
+
+def hasNewParser(versionString: String) = versionString match {
+  case HasScalaVersion(2, 12, minor) => minor >= 13
+  case HasScalaVersion(2, 13, minor) => minor >= 1
+  case _ => false
+}
+
 lazy val `kind-projector` = project
   .in(file("."))
   .settings(
@@ -70,13 +94,13 @@ lazy val `kind-projector` = project
     releasePublishArtifactsAction := PgpKeys.publishSigned.value,
     publishTo := Some(if (isSnapshot.value) Opts.resolver.sonatypeSnapshots else Opts.resolver.sonatypeStaging),
     Compile / unmanagedSourceDirectories ++= {
-      (Compile / unmanagedSourceDirectories).value.map { dir =>
+      (Compile / unmanagedSourceDirectories).value.flatMap { dir =>
         val sv = scalaVersion.value
-        val is130 = sv == "2.13.0" // use 2.12 version for 2.13.0, reporters changed in 2.13.1
-        CrossVersion.partialVersion(sv) match {
-          case Some((2, n)) if n < 13 || is130 => file(dir.getPath ++ "-2.12-")
-          case _                               => file(dir.getPath ++ "-2.13+")
-        }
+        val suffices =
+          (if (hasNewParser(sv)) "-newParser" else "-oldParser") ::
+          (if (hasNewReporting(sv)) "-newReporting" else "-oldReporting") ::
+          Nil
+        suffices.map(suffix => file(dir.getPath + suffix))
       }
     },
     libraryDependencies += scalaOrganization.value % "scala-compiler" % scalaVersion.value,
@@ -94,12 +118,15 @@ lazy val `kind-projector` = project
       "-deprecation",
       "-unchecked",
     ),
-    Compile / compile / scalacOptions += "Xfatal-warnings",
+    Compile / compile / scalacOptions += "-Xfatal-warnings",
     Test / scalacOptions ++= {
       val jar = (Compile / packageBin).value
-      Seq(s"-Xplugin:${jar.getAbsolutePath}", s"-Jdummy=${jar.lastModified}") // ensures recompile
+      Seq("-Yrangepos", s"-Xplugin:${jar.getAbsolutePath}", s"-Jdummy=${jar.lastModified}") // ensures recompile
     },
-    Test / scalacOptions += "-Yrangepos",
+    Test / scalacOptions ++= (scalaVersion.value match {
+      case HasScalaVersion(2, 13, n) if n >= 2 => List("-Wconf:src=WarningSuppression.scala:error")
+      case _                                   => Nil
+    }),
     console / initialCommands := "import d_m._",
     Compile / console / scalacOptions := Seq("-language:_", "-Xplugin:" + (Compile / packageBin).value),
     Test / console / scalacOptions := (Compile / console / scalacOptions).value,
