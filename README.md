@@ -1,6 +1,7 @@
 ## Kind Projector
 
-[![Build Status](https://travis-ci.org/typelevel/kind-projector.svg?branch=master)](https://travis-ci.org/typelevel/kind-projector)
+![Continuous Integration](https://github.com/typelevel/kind-projector/workflows/Continuous%20Integration/badge.svg)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.typelevel/kind-projector_2.13.4/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.typelevel/kind-projector_2.13.4)
 
 ### Note on maintenance
 
@@ -65,10 +66,10 @@ To use this plugin in your own projects, add the following lines to
 your `build.sbt` file:
 
 ```scala
-addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.1" cross CrossVersion.full)
+addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.3" cross CrossVersion.full)
 
 // if your project uses multiple Scala versions, use this for cross building
-addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.1" cross CrossVersion.full)
+addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.3" cross CrossVersion.full)
 
 // if your project uses both 2.10 and polymorphic lambdas
 libraryDependencies ++= (scalaBinaryVersion.value match {
