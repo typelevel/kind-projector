@@ -51,34 +51,19 @@ class KindRewriter(plugin: Plugin, val global: Global)
     // Reserve some names
     val TypeLambda1 = newTypeName("Lambda")
     val TypeLambda2 = newTypeName("λ")
-    object InvPlaceholder  {
-      def unapply(name: TypeName): Boolean = name == newTypeName("$qmark") || name == newTypeName("$times")
-    }
-    object CoPlaceholder {
-      def unapply(name: TypeName): Boolean = name == newTypeName("$plus$qmark") || name == newTypeName("$plus$times")
-    }
-    object ContraPlaceholder {
-      def unapply(name: TypeName): Boolean = name == newTypeName("$minus$qmark") || name == newTypeName("$minus$times")
-    }
+    val InvPlaceholder = newTypeName("$times")
+    val CoPlaceholder = newTypeName("$plus$times")
+    val ContraPlaceholder = newTypeName("$minus$times")
  
-    def deprecationFor(name: TypeName): Option[(String, String)] =
-      if (name == newTypeName("$qmark")) Some("?" -> "*")
-      else if (name == newTypeName("$plus$qmark")) Some("+?" -> "+*")
-      else if (name == newTypeName("$minus$qmark")) Some("-?" -> "-*")
-      else None
-
     val TermLambda1 = TypeLambda1.toTermName
     val TermLambda2 = TypeLambda2.toTermName
 
-    class Placeholder(deprecationReporter: (String, String) => Unit) {
-      def unapply(name: TypeName): Option[Variance] = {
-        for ((used, preferred) <- deprecationFor(name)) deprecationReporter(used, preferred)
-        name match {
-          case InvPlaceholder() => Some(Invariant)
-          case CoPlaceholder() => Some(Covariant)
-          case ContraPlaceholder() => Some(Contravariant)
-          case _ => None
-        }
+    object Placeholder {
+      def unapply(name: TypeName): Option[Variance] = name match {
+        case InvPlaceholder => Some(Invariant)
+        case CoPlaceholder => Some(Covariant)
+        case ContraPlaceholder => Some(Contravariant)
+        case _ => None
       }
     }
 
@@ -255,17 +240,12 @@ class KindRewriter(plugin: Plugin, val global: Global)
       def handlePlaceholders(t: Tree, as: List[Tree]) = {
         // create a new type argument list, catching placeholders and create
         // individual identifiers for them.
-        val placeholder = new Placeholder((deprecatedName, preferredName) => {
-          val msg = "kind-projector ? placeholders are deprecated." +
-                   s" Use $preferredName instead of $deprecatedName for cross-compatibility with Scala 3"
-          global.runReporting.warning(t.pos, msg, Reporting.WarningCategory.Deprecation, t.symbol)
-        })
         val xyz = as.zipWithIndex.map {
-          case (id @ Ident(placeholder(variance)), i) =>
+          case (Ident(Placeholder(variance)), i) =>
             (Ident(newParamName(i)), Some(Right(variance)))
-          case (apl @ AppliedTypeTree(Ident(placeholder(variance)), ps), i) =>
+          case (AppliedTypeTree(Ident(Placeholder(variance)), ps), i) =>
             (Ident(newParamName(i)), Some(Left((variance, ps.map(makeComplexTypeParam)))))
-          case (xst @ ExistentialTypeTree(AppliedTypeTree(Ident(placeholder(variance)), ps), _), i) =>
+          case (ExistentialTypeTree(AppliedTypeTree(Ident(Placeholder(variance)), ps), _), i) =>
             (Ident(newParamName(i)), Some(Left((variance, ps.map(makeComplexTypeParam)))))
           case (a, i) =>
             (super.transform(a), None)

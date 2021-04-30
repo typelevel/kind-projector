@@ -14,8 +14,8 @@ object Test {
   baz[({type L[X,Y] = Tuple3[Int, X, Y]})#L]
 
   // used to test the plugin
-  bar[Either[Int, ?]]
-  baz[Tuple3[Int, ?, ?]]
+  bar[Either[Int, *]]
+  baz[Tuple3[Int, *, *]]
   baz[Tuple3[*, Int, *]]
 
   // should not be changed by the plugin
@@ -41,8 +41,7 @@ object Test {
 
   trait Functor[F[_]]
   trait EitherT[F[_], A, B]
-  qux[Functor[?[_]]]
-  qux[EitherT[?[_], Int, Double]]
+  qux[Functor[*[_]]]
   qux[EitherT[*[_], Int, Double]]
 
   // higher higher order
@@ -54,7 +53,7 @@ object Test {
   vex[Lambda[A[B[C]] => Unit]]
 
   trait FunctorK[F[_[_]]]
-  vex[FunctorK[?[_[_]]]]
+  vex[FunctorK[*[_[_]]]]
 
   def hex[T[_[_[_[_]]]]] = ()
   hex[({type L[A[_[_[_]]]] = Unit})#L]
@@ -63,14 +62,13 @@ object Test {
   // covariant
   def mux[T[+_]] = ()
   mux[({type L[+A] = Either[A, Int]})#L]
-  mux[Either[+?, Int]]
+  mux[Either[+*, Int]]
   mux[Lambda[`+A` => Either[A, Int]]]
   mux[Lambda[+[A] => Either[A, Int]]]
 
   // contravariant
   def bux[T[-_, +_]] = ()
   bux[({type L[-A, +B] = Function2[A, Int, B]})#L]
-  bux[Function2[-?, Int, +?]]
   bux[Function2[-*, Int, +*]]
   bux[Lambda[(`-A`, `+B`) => Function2[A, Int, B]]]
   bux[Lambda[(-[A], +[B]) => Function2[A, Int, B]]]
@@ -79,9 +77,7 @@ object Test {
   trait ~>[-F[_], +G[_]]
   def tux[T[-F[_]]] = ()
   def hux[T[+G[_]]] = ()
-  tux[~>[-?[_], Option]]
   tux[~>[-*[_], Option]]
-  hux[~>[Option, +?[_]]]
   hux[~>[Option, +*[_]]]
   tux[Lambda[`-F[_]` => ~>[F, Option]]]
   hux[Lambda[`+G[_]` => ~>[Option, G]]]

@@ -48,7 +48,6 @@ avoid defining the following identifiers:
 
  1. `Lambda` and `λ`
  2. `*`, `+*`, and `-*`
- 3. `?`, `+?`, and `-?` ([deprecated syntax](https://github.com/typelevel/kind-projector/issues/108); same meaning as the above)
  4. `Λ$`
  5. `α$`, `β$`, ...
 
