@@ -95,7 +95,7 @@ maven-scala-plugin (remember to use `_2.10.7`, `_2.11.12`, `_2.12.10` etc as app
       </configuration>
     </plugin>
 
-For mill projecs, add the plugin to the `scalacPluginIvyDep`
+For mill projects, add the plugin to the `scalacPluginIvyDep`
 Note the triple colons (`:::`) to ensure it uses the full scala version.
 
     override def scalacPluginIvyDeps = Agg(
