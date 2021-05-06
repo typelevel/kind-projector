@@ -18,7 +18,7 @@ inThisBuild {
       "2.13.2",
       "2.13.3",
       "2.13.4",
-      "2.13.5"
+      "2.13.5",
     ),
     organization := "org.typelevel",
     licenses += ("MIT", url("http://opensource.org/licenses/MIT")),
@@ -63,7 +63,7 @@ inThisBuild {
 
 val HasScalaVersion = {
   object Matcher {
-    def unapply(versionString: String) = 
+    def unapply(versionString: String) =
       versionString.takeWhile(ch => ch != '-').split('.').toList.map(str => scala.util.Try(str.toInt).toOption) match {
         case List(Some(epoch), Some(major), Some(minor)) => Some((epoch, major, minor))
         case _ => None
@@ -84,6 +84,11 @@ def hasNewParser(versionString: String) = versionString match {
   case _ => false
 }
 
+def hasNewPlugin(versionString: String) = versionString match {
+  case HasScalaVersion(2, 10, _) => false
+  case _ => true
+}
+
 lazy val `kind-projector` = project
   .in(file("."))
   .settings(
@@ -100,6 +105,7 @@ lazy val `kind-projector` = project
         val suffices =
           (if (hasNewParser(sv)) "-newParser" else "-oldParser") ::
           (if (hasNewReporting(sv)) "-newReporting" else "-oldReporting") ::
+          (if (hasNewPlugin(sv)) "-newPlugin" else "-oldPlugin") ::
           Nil
         suffices.map(suffix => file(dir.getPath + suffix))
       }
@@ -127,7 +133,7 @@ lazy val `kind-projector` = project
     Test / scalacOptions ++= (scalaVersion.value match {
       case HasScalaVersion(2, 13, n) if n >= 2 => List("-Wconf:src=WarningSuppression.scala:error")
       case _                                   => Nil
-    }),
+    }) ++ List("-P:kind-projector:underscore-placeholders"),
     console / initialCommands := "import d_m._",
     Compile / console / scalacOptions := Seq("-language:_", "-Xplugin:" + (Compile / packageBin).value),
     Test / console / scalacOptions := (Compile / console / scalacOptions).value,

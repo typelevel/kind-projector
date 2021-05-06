@@ -131,6 +131,37 @@ lambda is only used in the body once, and in the same order. For more
 complex type lambda expressions, you will need to use the function
 syntax.
 
+#### Inline Underscore Syntax
+
+Since version `0.13.0` kind-projector adds an option to use underscore symbol `_` instead of `*` to define anonymous type lambdas.
+The syntax roughly follows the [proposed new syntax for wildcards and placeholders](https://dotty.epfl.ch/docs/reference/changed-features/wildcards.html#migration-strategy) for Scala 3.2+ and is designed to allow cross-compilation of libraries between Scala 2 and Scala 3 while using the new Scala 3 syntax for both versions.
+
+To enable this mode, add `-P:kind-projector:underscore-placeholders` to your scalac command-line. In sbt you may do this as follows:
+
+```scala
+ThisBuild / scalacOptions += "-P:kind-projector:underscore-placeholders"
+```
+
+This mode is designed to be used with scalac versions `2.12.14`+ and `2.13.6`+, these versions add an the ability to use `?` as the existential type wildcard ([scala/scala#9560](https://github.com/scala/scala/pull/9560)), allowing to repurpose the underscore without losing the ability to write existential types. It is not advised that you use this mode with older versions of scalac or without `-Xsource:3` flag, since you will lose the underscore syntax entirely.
+
+Here are a few examples:
+
+```scala
+Tuple2[_, Double]        // equivalent to: type R[A] = Tuple2[A, Double]
+Either[Int, +_]          // equivalent to: type R[+A] = Either[Int, A]
+Function2[-_, Long, +_]  // equivalent to: type R[-A, +B] = Function2[A, Long, B]
+EitherT[_[_], Int, _]    // equivalent to: type R[F[_], B] = EitherT[F, Int, B]
+```
+
+Examples with `-Xsource:3`'s `?`-wildcard:
+
+```scala
+Tuple2[_, ?]        // equivalent to: type R[A] = Tuple2[A, x] forSome { type x }
+Either[?, +_]          // equivalent to: type R[+A] = Either[x, A] forSome { type x }
+Function2[-_, ?, +_]  // equivalent to: type R[-A, +B] = Function2[A, x, B] forSome { type x }
+EitherT[_[_], ?, _]    // equivalent to: type R[F[_], B] = EitherT[F, x, B] forSome { type x }
+```
+
 ### Function Syntax
 
 The more powerful syntax to use is the function syntax. This syntax
