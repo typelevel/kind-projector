@@ -375,8 +375,8 @@ class KindRewriter(plugin: Plugin, val global: Global)
 
         // Either[_, Int] case (if `underscore-placeholders` is enabled)
         case ExistentialTypeTree(AppliedTypeTree(t, as), params) if useUnderscoresForTypeLambda =>
-          val nonUnderscoreExistentials = params.filterNot {
-            case p: MemberDef => InvPlaceholderScala3(p.name)
+          val nonUnderscoreExistentials = params.filter {
+            case p: MemberDef => !InvPlaceholderScala3(p.name)
             case _ => true
           }
           val nt = atPos(tree.pos.makeTransparent)(handlePlaceholders(t, as))
