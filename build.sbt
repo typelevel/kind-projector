@@ -99,7 +99,6 @@ lazy val `kind-projector` = project
         val suffices =
           (if (hasNewParser(sv)) "-newParser" else "-oldParser") ::
           (if (hasNewReporting(sv)) "-newReporting" else "-oldReporting") ::
-          "-newPlugin" ::
           Nil
         suffices.map(suffix => file(dir.getPath + suffix))
       }

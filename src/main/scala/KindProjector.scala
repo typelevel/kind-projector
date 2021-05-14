@@ -12,7 +12,7 @@ import nsc.ast.TreeDSL
 import scala.reflect.NameTransformer
 import scala.collection.mutable
 
-class KindProjector(val global: Global) extends Plugin with PluginCompat {
+class KindProjector(val global: Global) extends Plugin {
   val name = "kind-projector"
   val description = "Expand type lambda syntax"
 
@@ -33,7 +33,7 @@ class KindProjector(val global: Global) extends Plugin with PluginCompat {
 }
 
 class KindRewriter(plugin: Plugin, val global: Global)
-    extends PluginComponent with Transform with TypingTransformers with TreeDSL with PluginOptionsCompat with ReportingCompat {
+    extends PluginComponent with Transform with TypingTransformers with TreeDSL with ReportingCompat {
 
   import global._
 
@@ -47,7 +47,7 @@ class KindRewriter(plugin: Plugin, val global: Global)
     System.getProperty("kp:genAsciiNames") == "true"
 
   lazy val useUnderscoresForTypeLambda: Boolean = {
-    pluginOptions(plugin).contains("underscore-placeholders")
+    plugin.options.contains("underscore-placeholders")
   }
 
   def newTransformer(unit: CompilationUnit): MyTransformer =
@@ -375,10 +375,7 @@ class KindRewriter(plugin: Plugin, val global: Global)
 
         // Either[_, Int] case (if `underscore-placeholders` is enabled)
         case ExistentialTypeTree(AppliedTypeTree(t, as), params) if useUnderscoresForTypeLambda =>
-          val nonUnderscoreExistentials = params.filter {
-            case p: MemberDef => !InvPlaceholderScala3(p.name)
-            case _ => true
-          }
+          val nonUnderscoreExistentials = params.filter(p => !InvPlaceholderScala3(p.name))
           val nt = atPos(tree.pos.makeTransparent)(handlePlaceholders(t, as))
           if (nonUnderscoreExistentials.isEmpty) nt else ExistentialTypeTree(nt, nonUnderscoreExistentials)
 
