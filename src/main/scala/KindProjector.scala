@@ -15,6 +15,20 @@ import scala.collection.mutable
 class KindProjector(val global: Global) extends Plugin {
   val name = "kind-projector"
   val description = "Expand type lambda syntax"
+
+  override val optionsHelp = Some(Seq(
+    "-P:kind-projector:underscore-placeholders - treat underscore as a type lambda placeholder,",
+    "disables Scala 2 wildcards, you must separately enable `-Xsource:3` option to be able to",
+    "write wildcards using `?` symbol").mkString(" "))
+
+
+  override def init(options: List[String], error: String => Unit): Boolean = {
+    if (options.exists(_ != "underscore-placeholders")) {
+      error(s"Error: $name takes no options except `-P:kind-projector:underscore-placeholders`, but got ${options.mkString(",")}")
+    }
+    true
+  }
+
   val components = new KindRewriter(this, global) :: Nil
 }
 
@@ -31,6 +45,10 @@ class KindRewriter(plugin: Plugin, val global: Global)
 
   lazy val useAsciiNames: Boolean =
     System.getProperty("kp:genAsciiNames") == "true"
+
+  lazy val useUnderscoresForTypeLambda: Boolean = {
+    plugin.options.contains("underscore-placeholders")
+  }
 
   def newTransformer(unit: CompilationUnit): MyTransformer =
     new MyTransformer(unit)
@@ -54,15 +72,28 @@ class KindRewriter(plugin: Plugin, val global: Global)
     val InvPlaceholder = newTypeName("$times")
     val CoPlaceholder = newTypeName("$plus$times")
     val ContraPlaceholder = newTypeName("$minus$times")
- 
+
     val TermLambda1 = TypeLambda1.toTermName
     val TermLambda2 = TypeLambda2.toTermName
+
+    object InvPlaceholderScala3 {
+      def apply(n: Name): Boolean = n match { case InvPlaceholderScala3() => true; case _ => false }
+      def unapply(t: TypeName): Boolean = t.startsWith("_$") && t.drop(2).decoded.forall(_.isDigit)
+    }
+    val CoPlaceholderScala3 = newTypeName("$plus_")
+    val ContraPlaceholderScala3 = newTypeName("$minus_")
 
     object Placeholder {
       def unapply(name: TypeName): Option[Variance] = name match {
         case InvPlaceholder => Some(Invariant)
         case CoPlaceholder => Some(Covariant)
         case ContraPlaceholder => Some(Contravariant)
+        case _ if useUnderscoresForTypeLambda => name match {
+          case InvPlaceholderScala3() => Some(Invariant)
+          case CoPlaceholderScala3 => Some(Covariant)
+          case ContraPlaceholderScala3 => Some(Contravariant)
+          case _ => None
+        }
         case _ => None
       }
     }
@@ -248,8 +279,19 @@ class KindRewriter(plugin: Plugin, val global: Global)
           case (ExistentialTypeTree(AppliedTypeTree(Ident(Placeholder(variance)), ps), _), i) =>
             (Ident(newParamName(i)), Some(Left((variance, ps.map(makeComplexTypeParam)))))
           case (a, i) =>
-            (super.transform(a), None)
+            // Using super.transform in existential type case in underscore mode
+            // skips the outer `ExistentialTypeTree` (reproduces in nested.scala test)
+            // and produces invalid trees where the unused underscore variables are not cleaned up
+            // by the current transformer
+            // I do not know why! Using `this.transform` instead works around the issue,
+            // however it seems to have worked correctly all this time non-underscore mode, so
+            // we keep calling super.transform to not change anything for existing code in classic mode.
+            val transformedA =
+              if (useUnderscoresForTypeLambda) this.transform(a)
+              else super.transform(a)
+            (transformedA, None)
         }
+
 
         // for each placeholder, create a type parameter
         val innerTypes = xyz.collect {
@@ -330,6 +372,12 @@ class KindRewriter(plugin: Plugin, val global: Global)
         // λ[A => Either[A, Int]] case.
         case AppliedTypeTree(Ident(TypeLambda2), AppliedTypeTree(target, a :: as) :: Nil) =>
           validateLambda(tree.pos, target, a, as)
+
+        // Either[_, Int] case (if `underscore-placeholders` is enabled)
+        case ExistentialTypeTree(AppliedTypeTree(t, as), params) if useUnderscoresForTypeLambda =>
+          val nonUnderscoreExistentials = params.filter(p => !InvPlaceholderScala3(p.name))
+          val nt = atPos(tree.pos.makeTransparent)(handlePlaceholders(t, as))
+          if (nonUnderscoreExistentials.isEmpty) nt else ExistentialTypeTree(nt, nonUnderscoreExistentials)
 
         // Either[?, Int] case (if no ? present this is a noop)
         case AppliedTypeTree(t, as) =>

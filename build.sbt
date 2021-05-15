@@ -5,7 +5,6 @@ inThisBuild {
     resolvers in Global += "scala-integration" at "https://scala-ci.typesafe.com/artifactory/scala-integration/",
     githubWorkflowPublishTargetBranches := Seq(),
     crossScalaVersions := Seq(
-      "2.10.7",
       "2.11.12",
       "2.12.8",
       "2.12.9",
@@ -18,7 +17,7 @@ inThisBuild {
       "2.13.2",
       "2.13.3",
       "2.13.4",
-      "2.13.5"
+      "2.13.5",
     ),
     organization := "org.typelevel",
     licenses += ("MIT", url("http://opensource.org/licenses/MIT")),
@@ -63,7 +62,7 @@ inThisBuild {
 
 val HasScalaVersion = {
   object Matcher {
-    def unapply(versionString: String) = 
+    def unapply(versionString: String) =
       versionString.takeWhile(ch => ch != '-').split('.').toList.map(str => scala.util.Try(str.toInt).toOption) match {
         case List(Some(epoch), Some(major), Some(minor)) => Some((epoch, major, minor))
         case _ => None
@@ -105,13 +104,6 @@ lazy val `kind-projector` = project
       }
     },
     libraryDependencies += scalaOrganization.value % "scala-compiler" % scalaVersion.value,
-    libraryDependencies ++= (scalaBinaryVersion.value match {
-      case "2.10" => List(
-        compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
-        "org.scalamacros" %% "quasiquotes" % "2.1.1"
-      )
-      case _      => Nil
-    }),
     scalacOptions ++= Seq(
       "-Xlint",
       "-feature",
@@ -127,7 +119,7 @@ lazy val `kind-projector` = project
     Test / scalacOptions ++= (scalaVersion.value match {
       case HasScalaVersion(2, 13, n) if n >= 2 => List("-Wconf:src=WarningSuppression.scala:error")
       case _                                   => Nil
-    }),
+    }) ++ List("-P:kind-projector:underscore-placeholders"),
     console / initialCommands := "import d_m._",
     Compile / console / scalacOptions := Seq("-language:_", "-Xplugin:" + (Compile / packageBin).value),
     Test / console / scalacOptions := (Compile / console / scalacOptions).value,
