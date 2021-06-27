@@ -65,7 +65,7 @@ To use this plugin in your own projects, add the following lines to
 your `build.sbt` file:
 
 ```scala
-addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.3" cross CrossVersion.full)
+addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.0" cross CrossVersion.full)
 
 // if your project uses both 2.10 and polymorphic lambdas
 libraryDependencies ++= (scalaBinaryVersion.value match {
@@ -99,7 +99,7 @@ For mill projects, add the plugin to the `scalacPluginIvyDep`
 Note the triple colons (`:::`) to ensure it uses the full scala version.
 
     override def scalacPluginIvyDeps = Agg(
-      ivy"org.typelevel:::kind-projector:0.11.3"
+      ivy"org.typelevel:::kind-projector:0.13.0"
     )
 
 That's it!
