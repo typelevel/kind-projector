@@ -305,8 +305,8 @@ class KindRewriter(plugin: Plugin, val global: Global)
 
         // if we didn't have any placeholders use the normal transformation.
         // otherwise build a type projection.
-        if (innerTypes.isEmpty) super.transform(tree)
-        else makeTypeProjection(innerTypes, AppliedTypeTree(t, args))
+        if (innerTypes.isEmpty) None
+        else Some(makeTypeProjection(innerTypes, AppliedTypeTree(t, args)))
       }
 
       // confirm that the type argument to a Lambda[...] expression is
@@ -375,13 +375,19 @@ class KindRewriter(plugin: Plugin, val global: Global)
 
         // Either[_, Int] case (if `underscore-placeholders` is enabled)
         case ExistentialTypeTree(AppliedTypeTree(t, as), params) if useUnderscoresForTypeLambda =>
-          val nonUnderscoreExistentials = params.filter(p => !InvPlaceholderScala3(p.name))
-          val nt = atPos(tree.pos.makeTransparent)(handlePlaceholders(t, as))
-          if (nonUnderscoreExistentials.isEmpty) nt else ExistentialTypeTree(nt, nonUnderscoreExistentials)
+          handlePlaceholders(t, as) match {
+            case Some(nt) =>
+              val nonUnderscoreExistentials = params.filter(p => !InvPlaceholderScala3(p.name))
+              atPos(tree.pos.makeTransparent)(if (nonUnderscoreExistentials.isEmpty) nt else ExistentialTypeTree(nt, nonUnderscoreExistentials))
+            case None => super.transform(tree)
+          }
 
         // Either[?, Int] case (if no ? present this is a noop)
         case AppliedTypeTree(t, as) =>
-          atPos(tree.pos.makeTransparent)(handlePlaceholders(t, as))
+          handlePlaceholders(t, as) match {
+            case Some(nt) => atPos(tree.pos.makeTransparent)(nt)
+            case None => super.transform(tree)
+          }
 
         // Otherwise, carry on as normal.
         case _ =>
