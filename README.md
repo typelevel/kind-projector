@@ -5,7 +5,7 @@
 
 ### Note on maintenance
 
-This project is only maintained for Scala 2.x. No new features are developed, but bug fix releases will still be made available. Dotty/Scala 3 has [built-in type lambda syntax](https://dotty.epfl.ch/docs/reference/new-types/type-lambdas-spec.html) and [kind-projector compatible syntax](https://dotty.epfl.ch/docs/reference/changed-features/wildcards.html).
+This project is only maintained for Scala 2.x. No new features are developed, but bug fix releases will still be made available. Dotty/Scala 3 has [built-in type lambda syntax](https://docs.scala-lang.org/scala3/reference/new-types/type-lambdas-spec.html) and [kind-projector compatible syntax](https://docs.scala-lang.org/scala3/reference/changed-features/wildcards.html).
 
 ### Dedication
 
@@ -134,7 +134,7 @@ syntax.
 #### Inline Underscore Syntax
 
 Since version `0.13.0` kind-projector adds an option to use underscore symbol `_` instead of `*` to define anonymous type lambdas.
-The syntax roughly follows the [proposed new syntax for wildcards and placeholders](https://dotty.epfl.ch/docs/reference/changed-features/wildcards.html#migration-strategy) for Scala 3.2+ and is designed to allow cross-compilation of libraries between Scala 2 and Scala 3 while using the new Scala 3 syntax for both versions.
+The syntax roughly follows the [proposed new syntax for wildcards and placeholders](https://docs.scala-lang.org/scala3/reference/changed-features/wildcards.html#migration-strategy) for Scala 3.2+ and is designed to allow cross-compilation of libraries between Scala 2 and Scala 3 while using the new Scala 3 syntax for both versions.
 
 To enable this mode, add `-P:kind-projector:underscore-placeholders` to your scalac command-line. In sbt you may do this as follows:
 
