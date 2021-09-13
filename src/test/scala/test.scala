@@ -14,8 +14,8 @@ object Test {
   baz[({type L[X,Y] = Tuple3[Int, X, Y]})#L]
 
   // used to test the plugin
-  bar[Either[Int, ?]]
-  baz[Tuple3[Int, ?, ?]]
+  bar[Either[Int, *]]
+  baz[Tuple3[Int, *, *]]
   baz[Tuple3[*, Int, *]]
 
   // should not be changed by the plugin
@@ -41,8 +41,7 @@ object Test {
 
   trait Functor[F[_]]
   trait EitherT[F[_], A, B]
-  qux[Functor[?[_]]]
-  qux[EitherT[?[_], Int, Double]]
+  qux[Functor[*[_]]]
   qux[EitherT[*[_], Int, Double]]
 
   // higher higher order
@@ -54,7 +53,7 @@ object Test {
   vex[Lambda[A[B[C]] => Unit]]
 
   trait FunctorK[F[_[_]]]
-  vex[FunctorK[?[_[_]]]]
+  vex[FunctorK[*[_[_]]]]
 
   def hex[T[_[_[_[_]]]]] = ()
   hex[({type L[A[_[_[_]]]] = Unit})#L]
