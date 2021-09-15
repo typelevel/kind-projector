@@ -1,7 +1,7 @@
 ## Kind Projector
 
 ![Continuous Integration](https://github.com/typelevel/kind-projector/workflows/Continuous%20Integration/badge.svg)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.typelevel/kind-projector_2.13.4/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.typelevel/kind-projector_2.13.4)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.typelevel/kind-projector_2.13.6/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.typelevel/kind-projector_2.13.6)
 
 ### Note on maintenance
 
@@ -56,7 +56,7 @@ reserving those identifiers, then this compiler plugin is for you!
 
 ### Using the plugin
 
-Kind-projector supports Scala 2.10, 2.11, 2.12, and 2.13.
+Kind-projector supports Scala 2.11, 2.12, and 2.13.
 
 _Note_: as of version 0.11.0 the plugin is published against the full Scala version
 (see #15)
@@ -65,20 +65,12 @@ To use this plugin in your own projects, add the following lines to
 your `build.sbt` file:
 
 ```scala
-addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.0" cross CrossVersion.full)
-
-// if your project uses both 2.10 and polymorphic lambdas
-libraryDependencies ++= (scalaBinaryVersion.value match {
-  case "2.10" =>
-    compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full) :: Nil
-  case _ =>
-    Nil
-})
+addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full)
 ```
 _Note_: for multi-project builds - put `addCompilerPlugin` clause into settings section for each sub-project.
 
 For maven projects, add the plugin to the configuration of the
-maven-scala-plugin (remember to use `_2.10.7`, `_2.11.12`, `_2.12.10` etc as appropriate):
+maven-scala-plugin (remember to use `_2.11.12`, `_2.12.15`, `_2.13.6` etc as appropriate):
 
     <plugin>
       <groupId>net.alchim31.maven</groupId>
@@ -88,8 +80,8 @@ maven-scala-plugin (remember to use `_2.10.7`, `_2.11.12`, `_2.12.10` etc as app
         <compilerPlugins>
           <compilerPlugin>
             <groupId>org.typelevel</groupId>
-            <artifactId>kind-projector_2.12.8</artifactId>
-            <version>0.11.1</version>
+            <artifactId>kind-projector_2.13.6</artifactId>
+            <version>0.13.2</version>
           </compilerPlugin>
         </compilerPlugins>
       </configuration>
@@ -99,7 +91,7 @@ For mill projects, add the plugin to the `scalacPluginIvyDep`
 Note the triple colons (`:::`) to ensure it uses the full scala version.
 
     override def scalacPluginIvyDeps = Agg(
-      ivy"org.typelevel:::kind-projector:0.13.0"
+      ivy"org.typelevel:::kind-projector:0.13.2"
     )
 
 That's it!
@@ -510,7 +502,7 @@ You can use the plugin with `scalac` by specifying it on the
 command-line. For instance:
 
 ```
-scalac -Xplugin:kind-projector_2.10-0.6.0.jar test.scala
+scalac -Xplugin:kind-projector_2.13.6-0.13.2.jar test.scala
 ```
 
 ### Known issues & errata
