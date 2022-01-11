@@ -1,14 +1,14 @@
 name: Back-Publish
 
-# on:
-#   workflow_dispatch:
-#     inputs:
-#       tag:
-#         description: 'Tag to back-publish. Example: v0.13.2'
-#         required: true
-#       scala:
-#         description: 'Scala version. Example: 2.13.8'
-#         required: true
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to back-publish. Example: v0.13.2'
+        required: true
+      scala:
+        description: 'Scala version. Example: 2.13.8'
+        required: true
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
