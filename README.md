@@ -505,6 +505,23 @@ command-line. For instance:
 scalac -Xplugin:kind-projector_2.13.6-0.13.2.jar test.scala
 ```
 
+### Releasing the plugin
+
+This project must use full cross-versioning and thus needs to be
+republished for each new release of Scala, but if the code doesn't
+change, we prefer not to ripple downstream with a version bump.  Thus,
+we typically republish from a tag.
+
+1. Be sure you're on Java 8.
+
+2. Run `./scripts/back-publish` with the tag and Scala version
+
+   ```console
+   $ ./scripts/back-publish
+   Usage: ./scripts/back-publish [-t <tag>] [-s <scala_version>]
+   $ ./scripts/back-publish -t v0.13.2 -s 2.13.8
+   ```
+
 ### Known issues & errata
 
 When dealing with type parameters that take covariant or contravariant
