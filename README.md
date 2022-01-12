@@ -522,6 +522,13 @@ we typically republish from a tag.
    $ ./scripts/back-publish -t v0.13.2 -s 2.13.8
    ```
 
+You can also run the above steps in CI by manually triggering the
+workflow in `backpublish.yml`. To do so, navigate to the **Actions**
+tab, select the **Back-Publish** workflow from the left side-bar, and
+click **Run workflow** to access a drop-down menu to run the workflow.
+
+<img width="376" alt="Screen Shot 2022-01-11 at 11 09 12" src="https://user-images.githubusercontent.com/3119428/149005987-5643361f-bb76-4e3b-8347-69bb55fbed60.png">
+
 ### Known issues & errata
 
 When dealing with type parameters that take covariant or contravariant

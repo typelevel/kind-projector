@@ -1,0 +1,32 @@
+name: Back-Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to back-publish. Example: v0.13.2'
+        required: true
+      scala:
+        description: 'Scala version. Example: 2.13.8'
+        required: true
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  backpublish:
+    name: Back-publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current branch (full)
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java and Scala
+        uses: olafurpg/setup-scala@v13
+        with:
+          java-version: adopt@1.8
+
+      - name: Run back-publish script
+        run: ./scripts/back-publish -t ${{ github.event.inputs.tag }} -s ${{ github.event.inputs.scala }}
