@@ -25,6 +25,7 @@ inThisBuild {
       "2.13.6",
       "2.13.7",
       "2.13.8",
+      "2.13.9",
     ),
     organization := "org.typelevel",
     licenses += ("MIT", url("http://opensource.org/licenses/MIT")),
