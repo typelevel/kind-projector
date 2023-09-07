@@ -47,6 +47,7 @@ jobs:
           - 2.13.9
           - 2.13.10
           - 2.13.11
+          - 2.13.12
         java: [adopt@1.8]
     runs-on: ${{ matrix.os }}
     steps:
