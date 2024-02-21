@@ -354,7 +354,7 @@ class KindRewriter(plugin: Plugin, val global: Global)
       // if we've already handled this tree, let's just use the
       // previous result and be done now!
       treeCache.get(tree) match {
-        case Some(result) => return result
+        case Some(cachedResult) => return cachedResult
         case None => ()
       }
 
