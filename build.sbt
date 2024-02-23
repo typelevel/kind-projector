@@ -1,5 +1,3 @@
-import ReleaseTransformations._
-
 inThisBuild {
   Seq(
     resolvers in Global += "scala-integration" at "https://scala-ci.typesafe.com/artifactory/scala-integration/",
