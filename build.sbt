@@ -34,9 +34,7 @@ inThisBuild {
     organization := "org.typelevel",
     licenses += ("MIT", url("http://opensource.org/licenses/MIT")),
     homepage := Some(url("http://github.com/typelevel/kind-projector")),
-    publishMavenStyle := true,
     Test / publishArtifact := false,
-    pomIncludeRepository := Function.const(false),
     pomExtra := (
       <scm>
         <url>git@github.com:typelevel/kind-projector.git</url>
@@ -55,20 +53,6 @@ inThisBuild {
         </developer>
       </developers>
     ),
-    releaseProcess := Seq[ReleaseStep](
-      checkSnapshotDependencies,
-      inquireVersions,
-      runClean,
-      runTest,
-      setReleaseVersion,
-      commitReleaseVersion,
-      tagRelease,
-      publishArtifacts,
-      setNextVersion,
-      commitNextVersion,
-      releaseStepCommand("sonatypeReleaseAll"),
-      pushChanges
-    )
   )
 }
 
