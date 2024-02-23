@@ -104,8 +104,10 @@ lazy val `kind-projector` = project
     crossTarget := target.value / s"scala-${scalaVersion.value}", // workaround for https://github.com/sbt/sbt/issues/5097
     crossVersion := CrossVersion.full,
     crossScalaVersions := (ThisBuild / crossScalaVersions).value,
-    releaseCrossBuild := true,
-    releasePublishArtifactsAction := PgpKeys.publishSigned.value,
+    publishMavenStyle := true,
+    sonatypeProfileName := organization.value,
+    publishTo := sonatypePublishToBundle.value,
+    sonatypeCredentialHost := "s01.oss.sonatype.org",
     publishTo := Some(if (isSnapshot.value) Opts.resolver.sonatypeSnapshots else Opts.resolver.sonatypeStaging),
     Compile / unmanagedSourceDirectories ++= {
       (Compile / unmanagedSourceDirectories).value.flatMap { dir =>
@@ -125,7 +127,6 @@ lazy val `kind-projector` = project
       "-deprecation",
       "-unchecked",
     ),
-    Compile / compile / scalacOptions += "-Xfatal-warnings",
     Test / scalacOptions ++= {
       val jar = (Compile / packageBin).value
       Seq("-Yrangepos", s"-Xplugin:${jar.getAbsolutePath}", s"-Jdummy=${jar.lastModified}") // ensures recompile
