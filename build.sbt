@@ -90,7 +90,6 @@ lazy val `kind-projector` = project
     sonatypeProfileName := organization.value,
     publishTo := sonatypePublishToBundle.value,
     sonatypeCredentialHost := "s01.oss.sonatype.org",
-    publishTo := Some(if (isSnapshot.value) Opts.resolver.sonatypeSnapshots else Opts.resolver.sonatypeStaging),
     Compile / unmanagedSourceDirectories ++= {
       (Compile / unmanagedSourceDirectories).value.flatMap { dir =>
         val sv = scalaVersion.value
