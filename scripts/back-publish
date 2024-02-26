@@ -4,7 +4,7 @@ set -e
 
 usage() {
     echo "Usage: $0 [-t <tag>] [-s <scala_version>]" 1>&2
-    echo "Example: $0 -t v0.13.2 -s 2.13.8"
+    echo "Example: $0 -t v0.13.3 -s 2.13.14"
 }
 
 while getopts "s:t:" OPTION; do
@@ -34,4 +34,4 @@ if [ "$JAVA_VERSION" -ne 8 ]; then
 fi
 
 git checkout $TAG
-sbt ++$SCALA_VERSION 'set sonatypeCredentialHost := "s01.oss.sonatype.org"' 'set `kind-projector`/sonatypeCredentialHost := "s01.oss.sonatype.org"' 'set publishTo := Some(MavenRepository("sonatype-s01-releases", "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2"))' clean test publishSigned sonatypeRelease
+sbt ++$SCALA_VERSION clean test publish sonatypeBundleRelease

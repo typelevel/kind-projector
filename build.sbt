@@ -1,5 +1,3 @@
-import ReleaseTransformations._
-
 inThisBuild {
   Seq(
     resolvers in Global += "scala-integration" at "https://scala-ci.typesafe.com/artifactory/scala-integration/",
@@ -31,13 +29,12 @@ inThisBuild {
       "2.13.10",
       "2.13.11",
       "2.13.12",
+      "2.13.13",
     ),
     organization := "org.typelevel",
     licenses += ("MIT", url("http://opensource.org/licenses/MIT")),
     homepage := Some(url("http://github.com/typelevel/kind-projector")),
-    publishMavenStyle := true,
     Test / publishArtifact := false,
-    pomIncludeRepository := Function.const(false),
     pomExtra := (
       <scm>
         <url>git@github.com:typelevel/kind-projector.git</url>
@@ -56,20 +53,6 @@ inThisBuild {
         </developer>
       </developers>
     ),
-    releaseProcess := Seq[ReleaseStep](
-      checkSnapshotDependencies,
-      inquireVersions,
-      runClean,
-      runTest,
-      setReleaseVersion,
-      commitReleaseVersion,
-      tagRelease,
-      publishArtifacts,
-      setNextVersion,
-      commitNextVersion,
-      releaseStepCommand("sonatypeReleaseAll"),
-      pushChanges
-    )
   )
 }
 
@@ -103,9 +86,10 @@ lazy val `kind-projector` = project
     crossTarget := target.value / s"scala-${scalaVersion.value}", // workaround for https://github.com/sbt/sbt/issues/5097
     crossVersion := CrossVersion.full,
     crossScalaVersions := (ThisBuild / crossScalaVersions).value,
-    releaseCrossBuild := true,
-    releasePublishArtifactsAction := PgpKeys.publishSigned.value,
-    publishTo := Some(if (isSnapshot.value) Opts.resolver.sonatypeSnapshots else Opts.resolver.sonatypeStaging),
+    publishMavenStyle := true,
+    sonatypeProfileName := organization.value,
+    publishTo := sonatypePublishToBundle.value,
+    sonatypeCredentialHost := "s01.oss.sonatype.org",
     Compile / unmanagedSourceDirectories ++= {
       (Compile / unmanagedSourceDirectories).value.flatMap { dir =>
         val sv = scalaVersion.value
@@ -124,7 +108,6 @@ lazy val `kind-projector` = project
       "-deprecation",
       "-unchecked",
     ),
-    Compile / compile / scalacOptions += "-Xfatal-warnings",
     Test / scalacOptions ++= {
       val jar = (Compile / packageBin).value
       Seq("-Yrangepos", s"-Xplugin:${jar.getAbsolutePath}", s"-Jdummy=${jar.lastModified}") // ensures recompile
