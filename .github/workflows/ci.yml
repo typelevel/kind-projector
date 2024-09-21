@@ -52,6 +52,7 @@ jobs:
           - 2.13.12
           - 2.13.13
           - 2.13.14
+          - 2.13.15
         java: [temurin@8]
     runs-on: ${{ matrix.os }}
     steps:
