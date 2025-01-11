@@ -33,6 +33,7 @@ inThisBuild {
       "2.13.13",
       "2.13.14",
       "2.13.15",
+      "2.13.16",
     ),
     organization := "org.typelevel",
     licenses += ("MIT", url("http://opensource.org/licenses/MIT")),
