@@ -92,9 +92,11 @@ lazy val `kind-projector` = project
     crossVersion := CrossVersion.full,
     crossScalaVersions := (ThisBuild / crossScalaVersions).value,
     publishMavenStyle := true,
-    sonatypeProfileName := organization.value,
-    publishTo := sonatypePublishToBundle.value,
-    sonatypeCredentialHost := "s01.oss.sonatype.org",
+    publishTo := {
+      val centralSnapshots = "https://central.sonatype.com/repository/maven-snapshots/"
+      if (isSnapshot.value) Some("central-snapshots" at centralSnapshots)
+      else localStaging.value
+    },
     Compile / unmanagedSourceDirectories ++= {
       (Compile / unmanagedSourceDirectories).value.flatMap { dir =>
         val sv = scalaVersion.value
