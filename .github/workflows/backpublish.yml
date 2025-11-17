@@ -41,4 +41,8 @@ jobs:
         run: echo $PGP_SECRET | base64 -d -i - | gpg --import
 
       - name: Run back-publish script
+        env:
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          SONATYPE_CREDENTIAL_HOST: ${{ secrets.SONATYPE_CREDENTIAL_HOST }}
         run: ./scripts/back-publish -t ${{ github.event.inputs.tag }} -s ${{ github.event.inputs.scala }}
