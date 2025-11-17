@@ -34,4 +34,4 @@ if [ "$JAVA_VERSION" -ne 8 ]; then
 fi
 
 git checkout $TAG
-sbt ++$SCALA_VERSION clean test publishSigned sonaUpload sonaRelease
+sbt ++$SCALA_VERSION clean test publish sonaRelease
