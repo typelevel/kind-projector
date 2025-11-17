@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to back-publish. Example: v0.13.2'
+        description: 'Tag to back-publish. Example: v0.13.4'
         required: true
       scala:
-        description: 'Scala version. Example: 2.13.8'
+        description: 'Scala version. Example: 2.13.18'
         required: true
 
 env:
@@ -19,14 +19,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout current branch (full)
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Setup Java and Scala
-        uses: olafurpg/setup-scala@v13
+      - name: Setup Java (zulu@8)
+        uses: actions/setup-java@v4
         with:
-          java-version: adopt@1.8
+          distribution: zulu
+          java-version: 8
+          cache: sbt
+
+      - name: Setup sbt
+        uses: sbt/setup-sbt@v1
+
+      - name: Import signing key
+        if: env.PGP_SECRET != '' && env.PGP_PASSPHRASE == ''
+        env:
+          PGP_SECRET: ${{ secrets.PGP_SECRET }}
+          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+        run: echo $PGP_SECRET | base64 -d -i - | gpg --import
 
       - name: Run back-publish script
+        env:
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          SONATYPE_CREDENTIAL_HOST: ${{ secrets.SONATYPE_CREDENTIAL_HOST }}
         run: ./scripts/back-publish -t ${{ github.event.inputs.tag }} -s ${{ github.event.inputs.scala }}
