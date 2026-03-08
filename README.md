@@ -1,7 +1,7 @@
 ## Kind Projector
 
 ![Continuous Integration](https://github.com/typelevel/kind-projector/workflows/Continuous%20Integration/badge.svg)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.typelevel/kind-projector_2.13.6/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.typelevel/kind-projector_2.13.6)
+[![Maven Central](https://img.shields.io/maven-central/v/org.typelevel/kind-projector_2.13.18)](https://central.sonatype.com/artifact/org.typelevel/kind-projector_2.13.18)
 
 ### Note on maintenance
 
